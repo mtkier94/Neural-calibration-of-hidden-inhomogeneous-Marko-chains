@@ -47,7 +47,7 @@ if __name__ ==  '__main__':
     print('Adjust saving process to new list of HPARAMS!')
     print('----------------------------')
 
-    baseline_sex = 'male'
+    baseline_sex = 'female'
     bool_train = False
     bool_mask = True # insert a masking layer into the model
     # HP_PARAMS (fixed)
@@ -108,27 +108,21 @@ if __name__ ==  '__main__':
 
 
     # HP_PARAMS (grid-search)
-    LR_RATES = [5e-2, 1e-2, 1e-3]#, 1e-4] #5e-2,  1e-5]
+    LR_RATES = [1e-2, 1e-3]#, 1e-4] #5e-2,  1e-5]
 
     loss = np.zeros((N_batches, len(LR_RATES)))
     #with strategy.scope():
     pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
-    # pmodel_base.summary()
 
     pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=0.1, input_shape=(None, len(res_features)), n_out=2)
     pmodel_res.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
-    # pmodel_res.summary()
     
     # keep random initialization for later use (optional resetting for different hyperparams)
     w_init = deepcopy(pmodel_res.get_weights())
 
     pmodel_transfer = combine_models(pmodel_base, pmodel_res, bool_masking = True)
     
-
-    # pmodel, w_init = random_pretraining(masking = bool_mask, iterations = 1, model_base = pmodel_base, x = [x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted)
-    # model_test = clone_model(combine_models(pmodel_base, create_mortality_res_net()))
-    # model_test.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
     times_dict = {}
 
@@ -179,16 +173,6 @@ if __name__ ==  '__main__':
                     with open(os.path.join(path_model, r'model_lr_{}_bz_{}_hist.npy'.format(lrate, hp_batchsize)), 'rb') as f:
                         history = np.load(f, allow_pickle=True)
 
-                    # pmodel_transfer.set_weights(pmodel.get_weights())
-                    # pmodel_transfer.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
-                    # pmodel_transfer.save(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(lrate, hp_batchsize)), save_format = 'tf')
-                    # pmodel_transfer.summary()
-
-                    # test = load_model(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(lrate, tag)), compile=False)
-                    # test.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
-                    # test.summary()
-                    # exit()
-
                     # did exploding gradients occur during training? check loaded model
                     bool_nan_val = check_exploded_gradients(pmodel)
                     if bool_nan_val == True:
@@ -205,7 +189,9 @@ if __name__ ==  '__main__':
             pickle.dump(times_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(os.path.join(path_model, 'training_times.p'), 'rb') as fp:
-            times_dict = pickle.load(fp)
+            print('ValueError: unsupported pickle protocol: 5')
+            print('We skip loading training times for now!')
+            #times_dict = pickle.load(fp)
 
 
     # display collective plot for all training-settings loaded in loop
@@ -216,42 +202,41 @@ if __name__ ==  '__main__':
     plt.savefig(os.path.join(path_model, 'HP_seach_lrates.png'), bbox_inches='tight')
     plt.close()
     
-    # look at one individual model and visualize progress
-    pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(1e-2, 64)), compile=False)
-    pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam') # as we don't train anymore, specifics of the optimizer are irrelevant
-    p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008T{}}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    # # look at one individual model and visualize progress
+    # pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(1e-2, 64)), compile=False)
+    # pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam') # as we don't train anymore, specifics of the optimizer are irrelevant
+    # p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
 
-    bool_grad = check_exploded_gradients(pmodel)
-    if bool_grad:
-        print('-------------------')
-        print('NaN-parameter-values in model!')
-        print('-------------------')
-        ValueError
-
-
-    # where did the training alter the underlying mortality-table?
-    loss, _ = pmodel.evaluate([x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted,  batch_size = 1024, verbose = 0)
-    plot_implied_survival_curve(pmodel, dav_table = p_survive, age_max = T_MAX, m=1, path_save = path_model, str_loss = '(loss: {})'.format(np.round_(loss,2))  )
+    # bool_grad = check_exploded_gradients(pmodel)
+    # if bool_grad:
+    #     print('-------------------')
+    #     print('NaN-parameter-values in model!')
+    #     print('-------------------')
+    #     ValueError
 
 
+    # # where did the training alter the underlying mortality-table?
+    # loss, _ = pmodel.evaluate([x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted,  batch_size = 1024, verbose = 0)
+    # plot_implied_survival_curve(pmodel, dav_table = p_survive, age_max = T_MAX, m=1, path_save = path_model, str_loss = '(loss: {})'.format(np.round_(loss,2))  )
 
-    val_dict, true_vals = mortality_heatmap_grid(pmodel, p_survive, m=1, age_max=T_MAX, rnn_seq_len = 20, save_path= path_model)
+
+    # val_dict, true_vals = mortality_heatmap_grid(pmodel, p_survive, m=1, age_max=T_MAX, rnn_seq_len = 20, save_path= path_model)
     
-    fig, ax = plt.subplots(2,2, figsize=(12,10))
-    sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['female']['nonsmoker'], ax=ax[0,0])
-    ax[0,0].set_title('male (non-smoker) - female (non smoker)')
-    sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['male']['smoker'], ax=ax[0,1])
-    ax[0,1].set_title('male (non-smoker) - male (smoker)')
-    sns.heatmap(val_dict['male']['smoker'] -val_dict['female']['smoker'], ax=ax[1,0])
-    ax[1,0].set_title('male (smoker) - female (smoker)')
-    sns.heatmap(val_dict['female']['nonsmoker'] -val_dict['female']['smoker'], ax=ax[1,1])
-    ax[1,1].set_title('female (non-smoker) - female (smoker)')
-    fig.suptitle(r'survival prob. $p_{x+m}$: dav_table - model_prediction')
-    plt.savefig(os.path.join(path_model, 'heatmap_grid_model_differences.png'))
-    plt.close()
+    # fig, ax = plt.subplots(2,2, figsize=(12,10))
+    # sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['female']['nonsmoker'], ax=ax[0,0])
+    # ax[0,0].set_title('male (non-smoker) - female (non smoker)')
+    # sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['male']['smoker'], ax=ax[0,1])
+    # ax[0,1].set_title('male (non-smoker) - male (smoker)')
+    # sns.heatmap(val_dict['male']['smoker'] -val_dict['female']['smoker'], ax=ax[1,0])
+    # ax[1,0].set_title('male (smoker) - female (smoker)')
+    # sns.heatmap(val_dict['female']['nonsmoker'] -val_dict['female']['smoker'], ax=ax[1,1])
+    # ax[1,1].set_title('female (non-smoker) - female (smoker)')
+    # fig.suptitle(r'survival prob. $p_{x+m}$: dav_table - model_prediction')
+    # plt.savefig(os.path.join(path_model, 'heatmap_grid_model_differences.png'))
+    # plt.close()
 
 
-    # loss per no. of HMC iterations
-    plot_new_vs_init_loss(pmodel, pmodel_base, x_ts, y_ts_discounted, base_features, res_features)
+    # # loss per no. of HMC iterations
+    # plot_new_vs_init_loss(pmodel, pmodel_base, x_ts, y_ts_discounted, base_features, res_features)
 
     

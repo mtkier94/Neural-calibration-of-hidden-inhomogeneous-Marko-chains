@@ -20,11 +20,12 @@ from global_vars import path_data, path_models_baseline_transfer
 if __name__ ==  '__main__':
 
     strategy = tf.distribute.MirroredStrategy()
+    baseline_sex = 'female'
 
     #### load data
     with open(os.path.join(path_data, 'Data.npy'), 'rb') as f:
         data = np.load(f)
-    p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008Tmale.csv'),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
     assert(T_MAX==len(p_survive)-1) # table starts at age 0
 
     #with strategy.scope():

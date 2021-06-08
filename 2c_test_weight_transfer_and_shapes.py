@@ -13,11 +13,7 @@ from tensorflow.keras.layers import GRU, Dense, Input
 from tensorflow.keras.models import Model
 
 
-# from functions.sub_actuarial import get_CFs_vectorized, predict_contract_vectorized, predict_rnn_contract_vectorized
 from functions.tf_loss_custom import compute_loss_mae, compute_loss_raw
-# from functions.tf_model_res import create_mortality_res_net
-# from functions.sub_visualization import mortality_rnn_heatmap
-
 from functions.sub_backtesting import predict_contract_backtest, check_if_rnn_version
 
 # discount factor
@@ -29,6 +25,8 @@ if __name__ == '__main__':
 
     baseline_sex = 'female'
     cwd = os.path.dirname(os.path.realpath(__file__))
+    p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
+
 
     # load data
     # 1) contract data (raw)

@@ -64,6 +64,39 @@ def compute_loss_raw(y_true, y_pred):
 
     return tf.reduce_mean((tf.reduce_sum(values, axis = [1,2])), axis = 0)
 
+@tf.function(experimental_relax_shapes = True) 
+def eval_loss_raw(y_true, y_pred):
+    '''
+    Implementation equal to compute_loss_raw, expect that the final output is not reduced to a scalar, but the shape reflects the batch size.    
+    '''
+    
+    # form cumulative survival probabilities to weight paths (of CFs)
+    # cumprod along axis of steps, i.e. axis = 1
+    # Note: y_pred.shape: (N_batch, N_eff, 2)
+    cum_probs = tf.math.cumprod(y_pred[:,:,0:1], axis = 1)
+    # broadcast and drop last entry/ last time-step
+    cum_probs = tf.broadcast_to(cum_probs[:,0:-1], shape=tf.shape(y_true[:,0:-1,:]))
+    ones = tf.ones(tf.shape(y_true[:,0:1,:]))
+    cum_prob_concat = tf.concat([ones, cum_probs], axis=1)
+    # prob of reaching time t and subsequently transitioning to states described in y_pred
+    prob_eff = cum_prob_concat*y_pred
+    # CFs at given times weighted by reaching time and transitioning in the respective state
+    # Note: discounting factor a-priori included in CFs, i.e. y_true
+    values = prob_eff*y_true
+
+    if False:
+        # check shapes for debugging
+        # Note: for better debugging remove @tf.function decorator to disable graph mode and enable eager performance
+        print('shapes y_true, y_pred: ', tf.shape(y_true), tf.shape(y_pred))        
+        print('shapes y_true, y_pred: ', y_true.shape, y_pred.shape)   
+        print('cum_probs.shape', tf.shape(cum_probs), ' numpy.shape: ', cum_probs.shape)
+        print('ones shape:', tf.shape(ones), ones.shape)
+        print('cum_prob_concat.shape', tf.shape(cum_prob_concat), 'numpy.shape: ', cum_prob_concat.shape)
+        print('prob_eff: ', tf.shape(prob_eff), prob_eff.shape)
+        print('shape of values ', tf.shape(values), ' numpy.shapes: ', values.shape)
+
+    return tf.reduce_sum(values, axis = [1,2])
+
 @tf.function(experimental_relax_shapes = True) # relax shapes, as we will want to consider different sequence lengths, i.e. different durations of insurance-contracts
 def compute_loss_mae(y_true, y_pred):
     '''
