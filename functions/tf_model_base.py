@@ -88,21 +88,27 @@ def create_train_save_model_base(X, Y, h_units, learning_rate, epochs, batch_sz,
     if (bool_train==False) and (type(path_save)==type(None)):
         raise ValueError('Model cannot be loaded or trained!')
 
+    if type(loss_function) == type(tf.keras.losses.KLDivergence()):
+        tag = 'KLDiv'
+    elif loss_function == 'mae':
+        tag = 'mae'
+    else:
+        raise ValueError('Unknown loss_function!')
 
-    print('Training with h_units: {}, batch_sz: {}, learning rate: {} for {} epochs.'.format(h_units, batch_sz,learning_rate, epochs))
-    if (bool_train == False) and os.path.exists(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}.h5'.format(h_units, batch_sz,learning_rate))):
+    print('Training with h_units: {}, batch_sz: {}, learning rate: {} for {} epochs with {} loss.'.format(h_units, batch_sz,learning_rate, epochs, tag))
+    if (bool_train == False) and os.path.exists(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}_loss_{}.h5'.format(h_units, batch_sz,learning_rate, tag))):
         # load model & hist
-        model = load_model(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}.h5'.format(h_units, batch_sz,learning_rate)))
-        history = np.load(os.path.join(path_save, r'hist_widths_{}_bz_{}_lr_{}.npy'.format(h_units, batch_sz,learning_rate)), allow_pickle= True).item()
+        model = load_model(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}_loss_{}.h5'.format(h_units, batch_sz,learning_rate, tag)))
+        history = np.load(os.path.join(path_save, r'hist_widths_{}_bz_{}_lr_{}_loss_{}.npy'.format(h_units, batch_sz,learning_rate, tag)), allow_pickle= True)#.item()
         print('\t ... pretrained model loaded.')
     else:
         print( '\t ... starting training')
         tic = time.time()
         model.fit(X, Y, batch_size=batch_sz, epochs=epochs, verbose=verbose, callbacks=callbacks)
-        history = model.history.history
+        history = np.stack([np.array(model.history.history['loss']), np.array(model.history.history['mae']), np.array(model.history.history['mape'])], axis = 0)
         if type(path_save)!= type(None):
-            model.save(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}.h5'.format(h_units, batch_sz,learning_rate)))
-            np.save(os.path.join(path_save, r'hist_widths_{}_bz_{}_lr_{}.npy'.format(h_units, batch_sz,learning_rate)), history)
+            model.save(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}_loss_{}.h5'.format(h_units, batch_sz,learning_rate, tag)))
+            np.save(os.path.join(path_save, r'hist_widths_{}_bz_{}_lr_{}_loss_{}.npy'.format(h_units, batch_sz,learning_rate, tag)), history)
         print(' \t ... completed after {} sec.'.format(np.round_(time.time()-tic,2)))
 
     return model, history
