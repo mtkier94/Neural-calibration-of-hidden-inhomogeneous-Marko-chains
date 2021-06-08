@@ -20,6 +20,13 @@ from global_vars import path_models_baseline_hpsearch, path_data, path_models_ba
 
 if __name__ == '__main__':
 
+    ###-----------------------------------------------------------------------------------------------------------------
+    # Optional HPSearch - Standard choice in 2a_main seems to be sufficient
+    # Fine-tuning to respect customer segments will be performed with joint model either way
+    ###-----------------------------------------------------------------------------------------------------------------
+    assert False, 'HPSearch turned off for now'
+
+    baseline_sex = 'male'
     bool_train = False
 
     if bool_train:
@@ -35,7 +42,7 @@ if __name__ == '__main__':
     #cwd = os.path.dirname(os.path.realpath(__file__)) 
     #path_models_base = os.path.join(cwd, 'models_base')
 
-    p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008Tmale.csv'),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
     assert(T_MAX==len(p_survive)-1) # table starts at age 0
 
     freqs = [1,1/2, 1/3, 1/6, 1/12]
@@ -52,9 +59,10 @@ if __name__ == '__main__':
     n_out = 2
      
 
-    HP_UNITS = [[40,40,20]]#, [60,60,40], [80,80,60], [80,80,60, 60], [80,80,60, 20]]
+    HP_UNITS = [[40,40,20]]#, [20,20,10] [60,60,40], [80,80,60], [80,80,60, 60], [80,80,60, 20]]
     HP_LR = [10**(-k) for k in range(1,6)]
     HP_BATCH_SZ = [2**k for k in [3,4,6,10]]
+    HP_LOSS = ['mae', tf.keras.losses.KLDivergence()]
 
     models_dict = {}
     histories_dict = {}

@@ -13,10 +13,10 @@ from tensorflow.keras.layers import GRU, Dense, Input
 from tensorflow.keras.models import Model
 
 
-from functions.sub_actuarial import get_CFs_vectorized, predict_contract_vectorized, predict_rnn_contract_vectorized
+# from functions.sub_actuarial import get_CFs_vectorized, predict_contract_vectorized, predict_rnn_contract_vectorized
 from functions.tf_loss_custom import compute_loss_mae, compute_loss_raw
-from functions.tf_model_res import create_mortality_res_net, combine_base_and_res_model
-from functions.sub_visualization import mortality_rnn_heatmap
+# from functions.tf_model_res import create_mortality_res_net
+# from functions.sub_visualization import mortality_rnn_heatmap
 
 from functions.sub_backtesting import predict_contract_backtest, check_if_rnn_version
 
@@ -27,6 +27,7 @@ from global_vars import path_data, path_models_baseline_transfer
 
 if __name__ == '__main__':
 
+    baseline_sex = 'female'
     cwd = os.path.dirname(os.path.realpath(__file__))
 
     # load data
@@ -44,10 +45,10 @@ if __name__ == '__main__':
 
 
     # 3) mortality models - FFN and RNN versions
-    pmodel_base_rnn = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'survival_baseline_ts.h5'))
+    pmodel_base_rnn = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base_rnn.compile(loss = compute_loss_raw, metrics=['mae'], optimizer = 'adam')
 
-    pmodel_base_ffn = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'survival_baseline.h5'))
+    pmodel_base_ffn = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'ffn_davT{}.h5'.format(baseline_sex)))
     pmodel_base_ffn.compile(loss = compute_loss_raw, metrics=['mae'], optimizer = 'adam')
 
 
@@ -57,6 +58,7 @@ if __name__ == '__main__':
     print('-----------------------------------------------------------------')
     print('The FFN and RNN models have equal weights: ', (bool_lst==True).all())
     print('-----------------------------------------------------------------')
+    assert (bool_lst==True).all()
 
 
     ###### loop over data in batches with equal effective lengths

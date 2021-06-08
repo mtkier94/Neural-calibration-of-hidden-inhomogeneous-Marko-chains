@@ -27,7 +27,7 @@ from functions.sub_visualization import mortality_rnn_heatmap, plot_new_vs_init_
 from functions.sub_backtesting import check_exploded_gradients
 
 from global_vars import T_MAX, GAMMA
-from global_vars import path_data, path_models_baseline_transfer, path_models_resnet_with_padding_hpsearch
+from global_vars import path_data, path_models_baseline_transfer, path_models_resnet_with_padding_hpsearch_male, path_models_resnet_with_padding_hpsearch_female
 
 
 def exp_decay_scheduler(epoch, lr):
@@ -47,6 +47,7 @@ if __name__ ==  '__main__':
     print('Adjust saving process to new list of HPARAMS!')
     print('----------------------------')
 
+    baseline_sex = 'male'
     bool_train = False
     bool_mask = True # insert a masking layer into the model
     # HP_PARAMS (fixed)
@@ -59,7 +60,12 @@ if __name__ ==  '__main__':
     # ALternative: For numeric stability, set the default floating-point dtype to float64
     #tf.keras.backend.set_floatx('float64')
 
-    path_model = path_models_resnet_with_padding_hpsearch
+    if baseline_sex == 'male':
+        path_model = path_models_resnet_with_padding_hpsearch_male
+    elif baseline_sex == 'female':
+        path_model = path_models_resnet_with_padding_hpsearch_female
+    else:
+        assert False, 'Unknown Option for baseline_sex.'
     strategy = tf.distribute.MirroredStrategy()
 
     # option for processing data during training
@@ -102,17 +108,15 @@ if __name__ ==  '__main__':
 
 
     # HP_PARAMS (grid-search)
-    LR_RATES = [1e-2, 1e-3, 1e-4] #5e-2,  1e-5]
+    LR_RATES = [5e-2, 1e-2, 1e-3]#, 1e-4] #5e-2,  1e-5]
 
     loss = np.zeros((N_batches, len(LR_RATES)))
     #with strategy.scope():
-    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'survival_baseline_ts.h5'))
+    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
-    # pmodel_base.summary()
 
     pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=0.1, input_shape=(None, len(res_features)), n_out=2)
     pmodel_res.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
-    # pmodel_res.summary()
     
     # keep random initialization for later use (optional resetting for different hyperparams)
     w_init = deepcopy(pmodel_res.get_weights())
@@ -120,10 +124,6 @@ if __name__ ==  '__main__':
     pmodel_transfer = combine_models(pmodel_base, pmodel_res, bool_masking = True)
     pmodel_transfer.summary()
     
-
-    # pmodel, w_init = random_pretraining(masking = bool_mask, iterations = 1, model_base = pmodel_base, x = [x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted)
-    # model_test = clone_model(combine_models(pmodel_base, create_mortality_res_net()))
-    # model_test.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
     times_dict = {}
 
@@ -136,9 +136,9 @@ if __name__ ==  '__main__':
         opt_avg = tfa.optimizers.MovingAverage(opt)
 
         for optimizer in [opt, opt_avg]:
-            for hp_batchsize in [64]:#[64, 128]:
+            for hp_batchsize in [64]:#[32, 64, 128]:
 
-                EPOCHS_ADJ = EPOCHS*hp_batchsize//64
+                EPOCHS_ADJ = EPOCHS*max(1,hp_batchsize//64)
             
                 if optimizer == opt:
                     tag = 'adam'
@@ -167,25 +167,18 @@ if __name__ ==  '__main__':
                     pmodel.save(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(lrate, tag)), save_format = 'tf')
                     np.save(os.path.join(path_model, r'model_lr_{}_opt_{}_hist.npy'.format(lrate, tag)), history)
 
+                    # plot training history
+                    plt.plot(np.arange(len(np.array(history).flatten())), np.array(history).flatten(), label='lr: {}, opt: {}'.format(lrate, tag))
+
                 elif os.path.exists(os.path.join(path_model, r'model_lr_{}_opt_{}_hist.npy'.format(lrate, tag))):
                     pmodel = load_model(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(lrate, tag)), compile=False)
                     pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
-
-                    # pmodel.summary()
-                    # exit()
                     
                     with open(os.path.join(path_model, r'model_lr_{}_opt_{}_hist.npy'.format(lrate, tag)), 'rb') as f:
                         history = np.load(f, allow_pickle=True)
 
-                    # pmodel_transfer.set_weights(pmodel.get_weights())
-                    # pmodel_transfer.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
-                    # pmodel_transfer.save(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(lrate, tag)), save_format = 'tf')
-                    # pmodel_transfer.summary()
-
-                    # test = load_model(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(lrate, tag)), compile=False)
-                    # test.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
-                    # test.summary()
-                    # exit()
+                    # plot training history
+                    plt.plot(np.arange(len(np.array(history).flatten())), np.array(history).flatten(), label='lr: {}, opt: {}'.format(lrate, tag))
 
                     # did exploding gradients occur during training? check loaded model
                     bool_nan_val = check_exploded_gradients(pmodel)
@@ -194,8 +187,6 @@ if __name__ ==  '__main__':
                 else:
                     print('train-flag is off and model with lr {} and optimizer {} not yet trained.'.format(lrate, tag))
                     
-                # plot training history
-                plt.plot(np.arange(len(np.array(history).flatten())), np.array(history).flatten(), label='lr: {}, opt: {}'.format(lrate, tag))
     
     # save training times
     if bool_train == True:

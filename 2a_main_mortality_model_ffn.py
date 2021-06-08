@@ -13,6 +13,7 @@ from tensorboard.plugins.hparams import api as hp # hyperparameter-tuning
 
 from functions.sub_data_prep import create_trainingdata_baseline
 from functions.tf_model_base import create_train_save_model_base, create_baseline_model_ffn
+from functions.tf_tools import LRFind
 
 from global_vars import T_MAX # max age in baseline survival table; used for scaling
 
@@ -23,10 +24,13 @@ def lr_schedule(epoch, lr):
         '''
         Custom learning rate schedule.
         '''
-        if (epoch>=5000) and (epoch % 1000==0):
-            return lr*0.8
+        if (epoch>=1000) and (epoch % 250==0):
+            return lr*0.9
         else:
             return lr
+
+def ES():
+    return tf.keras.callbacks.EarlyStopping(monitor='mape', patience=10000, restore_best_weights=True)
 
 
 
@@ -34,7 +38,7 @@ def lr_schedule(epoch, lr):
 if __name__ == '__main__':
 
     bool_train = True
-    baseline_sex = 'male'
+    baseline_sex = 'female'
     callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule)]
 
     if bool_train:
@@ -58,34 +62,48 @@ if __name__ == '__main__':
     BATCH = 8 # 1024 #min(1024, len(x))    
     LRATE = 0.005
     EPOCHS = 40000
-    WIDTHS = [40,40,20]
+    WIDTHS = [40,40,20]#[20,20,20] #
     n_in = x.shape[1]
     n_out = 2    
 
+    if bool_train:
+        model = create_baseline_model_ffn(n_in=n_in, n_out=n_out, h_units=WIDTHS, h_actv= ['relu']*(len(WIDTHS)-1)+['tanh'], tf_loss_function = tf.keras.losses.KLDivergence(),#'mae', #
+                                    optimizer=tf.keras.optimizers.Adam(lr=0.005))
+        model.fit(x, y, batch_size=BATCH, epochs= EPOCHS, verbose=1, callbacks=[tf.keras.callbacks.LearningRateScheduler(lr_schedule), ES()])
+        history = np.stack([np.array(model.history.history['loss']), np.array(model.history.history['mae'])], axis = 0) #np.array(model.history.history, ndmin=2)
+        
+        model.save(os.path.join(path_models_baseline_transfer, r'ffn_davT{}.h5'.format(baseline_sex)))    
+        np.save(os.path.join(path_models_baseline_transfer  , r'hist_{}.npy'.format(baseline_sex)), history)                                  
+    else:
+        # model = load_model(path_models_baseline_transfer, r'survival_baseline_{}.h5'.format(baseline_sex))
+        model = load_model(os.path.join(path_models_baseline_transfer,  r'ffn_davT{}.h5'.format(baseline_sex)))
+        history = np.load(os.path.join(path_models_baseline_transfer  , r'hist_{}.npy'.format(baseline_sex)), allow_pickle= True)#.item()
     
-    model, history = create_train_save_model_base(X=x, Y = y, h_units = WIDTHS, learning_rate = LRATE, epochs = EPOCHS, batch_sz = BATCH, loss_function= tf.keras.losses.KLDivergence(),
-                                            path_save = None, bool_train = bool_train, callbacks = callbacks, n_in = 2, n_out = 2, verbose = 1)
-
-    model.save(os.path.join(path_models_baseline_transfer, r'survival_baseline_{}.h5'.format(baseline_sex)))
+    print(history.shape)
 
     _, ax = plt.subplots(1,2,figsize=(10,4))
-    ax[0].plot(history['loss'])
-    ax[1].plot(history['mae'])
+    if type(history) == type({}):
+        ax[0].plot(history['loss'])
+        ax[1].plot(history['mae'])
+    else:
+        ax[0].plot(history[0])
+        ax[1].plot(history[1])
     ax[0].set_ylabel('loss')
     ax[1].set_ylabel('mae')
     ax[0].set_xlabel('iteration')
     ax[1].set_xlabel('iteration')
     ax[0].set_yscale('log')
     ax[1].set_yscale('log')
+    plt.tight_layout()
     plt.show()
 
 
     #x_range = np.arange(len(p_survive)).reshape((-1,1))
-    plt.plot(x[:,0]*T_MAX, y[:,0], 'xr')
-    plt.plot(x[:,0]*T_MAX, model.predict(x)[:,0], 'ob', alpha = .2)
-    plt.ylabel('log(survival prob)')
-    plt.yscale('log')
-    plt.show()
+    # plt.plot(x[:,0]*T_MAX, y[:,0], 'xr')
+    # plt.plot(x[:,0]*T_MAX, model.predict(x)[:,0], 'ob', alpha = .2)
+    # plt.ylabel('log(survival prob)')
+    # plt.yscale('log')
+    # plt.show()
     plt.plot(x[:,0]*T_MAX, y[:,1], 'xr')
     plt.plot(x[:,0]*T_MAX, model.predict(x)[:,1], 'om', alpha = .2)
     plt.ylabel('log(death prob)')

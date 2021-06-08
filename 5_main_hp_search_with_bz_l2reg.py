@@ -27,7 +27,7 @@ from functions.sub_visualization import mortality_rnn_heatmap, plot_new_vs_init_
 from functions.sub_backtesting import check_exploded_gradients
 
 from global_vars import T_MAX, GAMMA
-from global_vars import path_data, path_models_baseline_transfer, path_models_resnet_with_padding_hpsearch
+from global_vars import path_data, path_models_baseline_transfer, path_models_resnet_with_padding_hpsearch_male, path_models_resnet_with_padding_hpsearch_female
 
 
 def exp_decay_scheduler(epoch, lr):
@@ -47,6 +47,7 @@ if __name__ ==  '__main__':
     print('Adjust saving process to new list of HPARAMS!')
     print('----------------------------')
 
+    baseline_sex = 'male'
     bool_train = False
     bool_mask = True # insert a masking layer into the model
     # HP_PARAMS (fixed)
@@ -59,7 +60,12 @@ if __name__ ==  '__main__':
     # ALternative: For numeric stability, set the default floating-point dtype to float64
     #tf.keras.backend.set_floatx('float64')
 
-    path_model = path_models_resnet_with_padding_hpsearch
+    if baseline_sex == 'male':
+        path_model = path_models_resnet_with_padding_hpsearch_male
+    elif baseline_sex == 'female':
+        path_model = path_models_resnet_with_padding_hpsearch_female
+    else:
+        assert False, 'Unknown Option for baseline_sex.'
     strategy = tf.distribute.MirroredStrategy()
 
     # option for processing data during training
@@ -102,11 +108,11 @@ if __name__ ==  '__main__':
 
 
     # HP_PARAMS (grid-search)
-    LR_RATES = [1e-2, 1e-3, 1e-4] #5e-2,  1e-5]
+    LR_RATES = [5e-2, 1e-2, 1e-3]#, 1e-4] #5e-2,  1e-5]
 
     loss = np.zeros((N_batches, len(LR_RATES)))
     #with strategy.scope():
-    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'survival_baseline_ts.h5'))
+    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
     # pmodel_base.summary()
 
@@ -134,10 +140,10 @@ if __name__ ==  '__main__':
         #opt = tf.keras.optimizers.Adam(lr=lrate)
         opt_avg = tfa.optimizers.MovingAverage(opt)
 
-        for optimizer in [opt, opt_avg]:
-            for hp_batchsize in [64]:#[64, 128]:
+        for optimizer in [opt]: #, opt_avg]:
+            for hp_batchsize in [32, 64]:#[64, 128]:
 
-                EPOCHS_ADJ = EPOCHS*hp_batchsize//64
+                EPOCHS_ADJ = EPOCHS*max(1,hp_batchsize//64)
             
                 if optimizer == opt:
                     tag = 'adam'
@@ -166,11 +172,11 @@ if __name__ ==  '__main__':
                     pmodel.save(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(lrate, hp_batchsize)), save_format = 'tf')
                     np.save(os.path.join(path_model, r'model_lr_{}_bz_{}_hist.npy'.format(lrate, hp_batchsize)), history)
 
-                elif os.path.exists(os.path.join(path_model, r'model_lr_{}_opt_{}_hist.npy'.format(lrate, tag))):
-                    pmodel = load_model(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(lrate, tag)), compile=False)
+                elif os.path.exists(os.path.join(path_model, r'model_lr_{}_bz_{}_hist.npy'.format(lrate, hp_batchsize))):
+                    pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(lrate, hp_batchsize)), compile=False)
                     pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
                     
-                    with open(os.path.join(path_model, r'model_lr_{}_opt_{}_hist.npy'.format(lrate, tag)), 'rb') as f:
+                    with open(os.path.join(path_model, r'model_lr_{}_bz_{}_hist.npy'.format(lrate, hp_batchsize)), 'rb') as f:
                         history = np.load(f, allow_pickle=True)
 
                     # pmodel_transfer.set_weights(pmodel.get_weights())
@@ -186,12 +192,12 @@ if __name__ ==  '__main__':
                     # did exploding gradients occur during training? check loaded model
                     bool_nan_val = check_exploded_gradients(pmodel)
                     if bool_nan_val == True:
-                        print('Model with nan-paramter-values! ', r'model_lr_{}_opt_{}.h5'.format(lrate, tag))
+                        print('Model with nan-paramter-values! ', r'model_lr_{}_bz_{}.h5'.format(lrate, hp_batchsize))
                 else:
-                    print('train-flag is off and model with lr {} and optimizer {} not yet trained.'.format(lrate, tag))
+                    print('train-flag is off and model with lr {} and bz {} not yet trained.'.format(lrate, hp_batchsize))
                     
                 # plot training history
-                plt.plot(np.arange(len(np.array(history).flatten())), np.array(history).flatten(), label='lr: {}, bz: {}'.format(lrate, tag))
+                plt.plot(np.arange(len(np.array(history).flatten())), np.array(history).flatten(), label='lr: {}, bz: {}'.format(lrate, hp_batchsize))
     
     # save training times
     if bool_train == True:
@@ -211,9 +217,9 @@ if __name__ ==  '__main__':
     plt.close()
     
     # look at one individual model and visualize progress
-    pmodel = load_model(os.path.join(path_model, r'model_lr_{}_opt_{}.h5'.format(1e-2, 'adam')), compile=False)
+    pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(1e-2, 64)), compile=False)
     pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam') # as we don't train anymore, specifics of the optimizer are irrelevant
-    p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008Tmale.csv'),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008T{}}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
 
     bool_grad = check_exploded_gradients(pmodel)
     if bool_grad:
@@ -230,11 +236,6 @@ if __name__ ==  '__main__':
 
 
     val_dict, true_vals = mortality_heatmap_grid(pmodel, p_survive, m=1, age_max=T_MAX, rnn_seq_len = 20, save_path= path_model)
-
-    # delta_male_ns = mortality_heatmap(pmodel, p_survive, sex = 'male', nonsmoker=True, m=1, age_max=T_MAX, rnn_seq_len = 20)
-    # delta_female_ns = mortality_heatmap(pmodel, p_survive, sex = 'female', nonsmoker=True, m=1, age_max=T_MAX, rnn_seq_len = 20)
-    # delta_male_s = mortality_heatmap(pmodel, p_survive, sex = 'male', nonsmoker=False, m=1, age_max=T_MAX, rnn_seq_len = 20)
-    # delta_female_s = mortality_heatmap(pmodel, p_survive, sex = 'female', nonsmoker=False, m=1, age_max=T_MAX, rnn_seq_len = 20)
     
     fig, ax = plt.subplots(2,2, figsize=(12,10))
     sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['female']['nonsmoker'], ax=ax[0,0])

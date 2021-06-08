@@ -142,8 +142,11 @@ def check_if_rnn_version(model_ffn, model_rnn):
         #print(type(l_ffn), type(l_rnn))
         if type(l_rnn) != type(SimpleRNN(1)):
             bool_lst += [(w_ffn == w_rnn).all() for w_ffn, w_rnn in zip(l_ffn.get_weights(), l_rnn.get_weights())]
+            if type(l_rnn) != type(Input) and type(l_rnn) != Masking and type(l_rnn) != InputLayer:
+                assert l_rnn.activation == l_ffn.activation, 'activation functions {} and {} do not match! '.format(l_rnn.activation, l_ffn.activation)
         else:
             bool_lst += [(w_ffn == w_rnn).all() for w_ffn, w_rnn in zip(l_ffn.get_weights(), [l_rnn.get_weights()[i] for i in [0,2]])] 
+            assert l_rnn.activation == l_ffn.activation, 'activation functions {} and {} do not match! '.format(l_rnn.activation, l_ffn.activation)
 
     return np.array(bool_lst)      
 
@@ -187,8 +190,8 @@ def predict_contract_backtest(x_raw, x_ts, y_ts, pmodel_ffn, pmodel_rnn, discoun
     print('probs_rnn shape: ', probs_rnn.shape, ' expected: ({},{},{})'.format(N_batch,N_eff,2))   
 
     # # -> exact equality not given due to limited precision with softmax-function (?!?!)
-    #print(probs_ffn[0])
-    #print(probs_rnn[0])
+    # print(probs_ffn[0:10])
+    # print(probs_rnn[0:10])
 
     assert(np.isclose(probs_rnn, probs_ffn).all())
     #assert((probs_rnn==probs_ffn).all())

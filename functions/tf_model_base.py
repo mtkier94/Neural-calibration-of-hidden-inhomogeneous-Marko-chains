@@ -52,8 +52,9 @@ def create_baseline_model_ffn(n_in = 2, n_out = 2, h_units = [40,40,20], h_actv 
     return model
 
 
-def create_train_save_model_base(h_units, learning_rate, epochs, batch_sz, path_save, bool_train, act_func = ['relu','relu', 'relu'], loss_function = tf.keras.losses.KLDivergence(),
-                                callbacks = None, n_in = 2, n_out = 2, X= None, Y = None, tf_data = None, verbose = 0):
+def create_train_save_model_base(X, Y, h_units, learning_rate, epochs, batch_sz, path_save, bool_train, act_func = ['relu','relu', 'relu'], 
+                                loss_function = tf.keras.losses.KLDivergence(),
+                                callbacks = None, n_in = 2, n_out = 2, verbose = 0):
     '''
     Create baseline-mortality-model, train it and save it (including its history) for later comparison of its hyperparameters.
 
@@ -81,7 +82,8 @@ def create_train_save_model_base(h_units, learning_rate, epochs, batch_sz, path_
     #     raise ValueError
 
     # create model
-    model = create_baseline_model_ffn(n_in=n_in, n_out=n_out, h_units=h_units, h_actv= act_func, tf_loss_function = loss_function, optimizer=tf.keras.optimizers.Adam(lr=learning_rate))
+    model = create_baseline_model_ffn(n_in=n_in, n_out=n_out, h_units=h_units, h_actv= act_func, tf_loss_function = loss_function, 
+                                    optimizer=tf.keras.optimizers.Adam(lr=learning_rate))
 
     if (bool_train==False) and (type(path_save)==type(None)):
         raise ValueError('Model cannot be loaded or trained!')
@@ -96,17 +98,11 @@ def create_train_save_model_base(h_units, learning_rate, epochs, batch_sz, path_
     else:
         print( '\t ... starting training')
         tic = time.time()
-        if type(tf_data) != type(None):
-            tf_data = tf_data.batch(batch_sz)
-            model.fit(tf_data, epochs=epochs, verbose=verbose)
-        else:
-            if type(X) == type(None) or type(Y) == type(None):
-                raise ValueError
-            else:
-                model.fit(X, Y, batch_size=batch_sz, epochs=epochs, verbose=verbose, callbacks=callbacks)
-        model.save(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}.h5'.format(h_units, batch_sz,learning_rate)))
+        model.fit(X, Y, batch_size=batch_sz, epochs=epochs, verbose=verbose, callbacks=callbacks)
         history = model.history.history
-        np.save(os.path.join(path_save, r'hist_widths_{}_bz_{}_lr_{}.npy'.format(h_units, batch_sz,learning_rate)), history)
+        if type(path_save)!= type(None):
+            model.save(os.path.join(path_save, r'model_widths_{}_bz_{}_lr_{}.h5'.format(h_units, batch_sz,learning_rate)))
+            np.save(os.path.join(path_save, r'hist_widths_{}_bz_{}_lr_{}.npy'.format(h_units, batch_sz,learning_rate)), history)
         print(' \t ... completed after {} sec.'.format(np.round_(time.time()-tic,2)))
 
     return model, history
@@ -141,9 +137,7 @@ def create_baseline_model_rnn(input_shape = (None, 2), n_out = 2, hidden_layers 
     for num, l in enumerate(hidden_layers[1:-1]):
         h = Dense(units = l, activation = 'relu', name = 'layer_{}'.format(num+1))(h)
     h = SimpleRNN(units = hidden_layers[-1], activation = 'tanh', return_sequences = True, name = 'layer_{}'.format(len(hidden_layers)+1))(h)
-    # h = Dense(units = 2*width_factor, activation = 'relu')(INPUT)
-    # h = Dense(units = 2*width_factor, activation = 'relu')(h)
-    # h = SimpleRNN(units = width_factor, activation = 'tanh', return_sequences = True)(h)
+
     # create activation as explicit layer -> transfer learning for when model_base and model_res for transition-probabilities will be combined
     # i.e. eventually pred(x) = softmax(pred_base_prior_softmax(x) + pred_res_prior_softmax(x))
     h = Dense(units = n_out, activation = 'linear', name = 'layer_{}'.format(len(hidden_layers)+2))(h)
@@ -178,7 +172,7 @@ def transfer_weights_dense2simpleRNN(dense_model, rnn_model):
         # only second-last hidden layer different between ffw and rnn
         # Note: last hidden layer is the explicit activation layer
         if l_new != rnn_model.layers[-3]:
-            print('l_new: ', l_new)
+            #print('l_new: ', l_new)
             l_new.set_weights(l_trained.get_weights())
         else:
             # SimpleRNN with additional memory-related matrix at position 1
@@ -187,4 +181,4 @@ def transfer_weights_dense2simpleRNN(dense_model, rnn_model):
             weights.insert(1, np.zeros((l_new.get_weights()[1].shape)))
             l_new.set_weights(weights)
 
-    return rnn_model # no return required; weights are updated in-place
+    #return rnn_model # no return required; weights are updated in-place
