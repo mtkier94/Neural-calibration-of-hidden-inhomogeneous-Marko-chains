@@ -10,6 +10,15 @@ def compute_loss_test(y_true, y_pred):
     return tf.reduce_mean(y_true*y_pred)
 
 
+@tf.function
+def log_mae(y_true, y_pred):
+    '''
+    log-mean-absolute error, i.e. mae(log(y_true)-log(y_pred)), to improve accuracy for low-value mortality probabilities
+    '''
+
+    return tf.reduce_mean(tf.math.abs(y_true**0.5-y_pred**0.5))
+
+
 
 # address retracing as different # of steps will results in different shapes and therefore different tf Graphs
 @tf.function(experimental_relax_shapes = True) 

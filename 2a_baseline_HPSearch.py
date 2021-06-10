@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #assert False, 'HPSearch turned off for now'
 
     baseline_sex = 'female'
-    bool_train = True
+    bool_train = False
     if baseline_sex == 'male':
         path_model = path_models_baseline_hpsearch_male
     elif baseline_sex == 'female':
@@ -105,6 +105,14 @@ if __name__ == '__main__':
                                                         act_func= hidden_act, callbacks= [tf.keras.callbacks.LearningRateScheduler(lr_schedule), ES()], 
                                                         n_in = 2, n_out = 2)
                     models_dict['hu {}, lr {}, bz {}, loss {}'.format(hidden_units,learning_rate,batch_sz, tag)], histories_dict['hu {}, lr {}, bz {}, loss {}'.format(hidden_units,learning_rate,batch_sz, tag)] = model, hist
+
+                    plt.plot(x[:,0]*T_MAX, y[:,1], 'xr')
+                    plt.plot(x[:,0]*T_MAX, model.predict(x)[:,1], 'om', alpha = .2)
+                    plt.ylabel('log(death prob)')
+                    plt.yscale('log')
+                    plt.title('hu {}, lr {}, bz {}, loss {}'.format(hidden_units,learning_rate,batch_sz, tag))
+                    plt.show() 
+
 
     # visualize results
     _, ax = plt.subplots(2,2,figsize=(12,8))

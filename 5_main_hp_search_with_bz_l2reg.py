@@ -31,10 +31,8 @@ from global_vars import path_data, path_models_baseline_transfer, path_models_re
 
 
 def exp_decay_scheduler(epoch, lr):
-    if epoch < 50:
-        return lr
-    elif epoch%2==0:
-        return lr * tf.math.exp(-0.1)
+    if (epoch >= 50) and (epoch%15==0):
+        return lr*0.9
     else:
         return lr
 
@@ -50,9 +48,6 @@ if __name__ ==  '__main__':
     baseline_sex = 'female'
     bool_train = False
     bool_mask = True # insert a masking layer into the model
-    # HP_PARAMS (fixed)
-    EPOCHS = 150
-    callbacks = [tf.keras.callbacks.LearningRateScheduler(exp_decay_scheduler)]
 
     # speed-up by setting mixed-precision -> disable for now as it causes dtype issues in compute_loss, specifically when concatenating ones and cum_prob
     #policy = tf.keras.mixed_precision.Policy('mixed_float16')
@@ -108,14 +103,19 @@ if __name__ ==  '__main__':
 
 
     # HP_PARAMS (grid-search)
-    LR_RATES = [1e-2, 1e-3]#, 1e-4] #5e-2,  1e-5]
+    # HP_PARAMS (fixed)
+    EPOCHS = 300
+    l2_penalty = 0.0
+    callbacks = [tf.keras.callbacks.LearningRateScheduler(exp_decay_scheduler)]
+    LR_RATES = [1e-2,5e-3, 1e-3]#, 1e-4] #5e-2,  1e-5]
+    HP_BZ = [32, 64, 128]
 
     loss = np.zeros((N_batches, len(LR_RATES)))
     #with strategy.scope():
     pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
-    pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=0.1, input_shape=(None, len(res_features)), n_out=2)
+    pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=l2_penalty, input_shape=(None, len(res_features)), n_out=2)
     pmodel_res.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
     
     # keep random initialization for later use (optional resetting for different hyperparams)
@@ -135,9 +135,9 @@ if __name__ ==  '__main__':
         opt_avg = tfa.optimizers.MovingAverage(opt)
 
         for optimizer in [opt]: #, opt_avg]:
-            for hp_batchsize in [32, 64]:#[64, 128]:
+            for hp_batchsize in HP_BZ:
 
-                EPOCHS_ADJ = EPOCHS*max(1,hp_batchsize//64)
+                EPOCHS_ADJ = EPOCHS
             
                 if optimizer == opt:
                     tag = 'adam'
@@ -149,7 +149,7 @@ if __name__ ==  '__main__':
                     print('Running with lr {}, optimizer {} and bz {} and training for {} epochs.'.format(lrate, tag, hp_batchsize, EPOCHS_ADJ))
                     # train pmodel
                     # initiate new res_new and reset weights -> same pseudo-random start for different optimizers
-                    pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=0.1, input_shape=(None, len(res_features)), n_out=2)
+                    pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=l2_penalty, input_shape=(None, len(res_features)), n_out=2)
                     pmodel_res.set_weights(w_init)
                     pmodel = combine_models(pmodel_base, pmodel_res, bool_masking = True)
                     pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = optimizer)
@@ -201,42 +201,3 @@ if __name__ ==  '__main__':
     plt.legend()
     plt.savefig(os.path.join(path_model, 'HP_seach_lrates.png'), bbox_inches='tight')
     plt.close()
-    
-    # # look at one individual model and visualize progress
-    # pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}.h5'.format(1e-2, 64)), compile=False)
-    # pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam') # as we don't train anymore, specifics of the optimizer are irrelevant
-    # p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
-
-    # bool_grad = check_exploded_gradients(pmodel)
-    # if bool_grad:
-    #     print('-------------------')
-    #     print('NaN-parameter-values in model!')
-    #     print('-------------------')
-    #     ValueError
-
-
-    # # where did the training alter the underlying mortality-table?
-    # loss, _ = pmodel.evaluate([x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted,  batch_size = 1024, verbose = 0)
-    # plot_implied_survival_curve(pmodel, dav_table = p_survive, age_max = T_MAX, m=1, path_save = path_model, str_loss = '(loss: {})'.format(np.round_(loss,2))  )
-
-
-    # val_dict, true_vals = mortality_heatmap_grid(pmodel, p_survive, m=1, age_max=T_MAX, rnn_seq_len = 20, save_path= path_model)
-    
-    # fig, ax = plt.subplots(2,2, figsize=(12,10))
-    # sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['female']['nonsmoker'], ax=ax[0,0])
-    # ax[0,0].set_title('male (non-smoker) - female (non smoker)')
-    # sns.heatmap(val_dict['male']['nonsmoker'] -val_dict['male']['smoker'], ax=ax[0,1])
-    # ax[0,1].set_title('male (non-smoker) - male (smoker)')
-    # sns.heatmap(val_dict['male']['smoker'] -val_dict['female']['smoker'], ax=ax[1,0])
-    # ax[1,0].set_title('male (smoker) - female (smoker)')
-    # sns.heatmap(val_dict['female']['nonsmoker'] -val_dict['female']['smoker'], ax=ax[1,1])
-    # ax[1,1].set_title('female (non-smoker) - female (smoker)')
-    # fig.suptitle(r'survival prob. $p_{x+m}$: dav_table - model_prediction')
-    # plt.savefig(os.path.join(path_model, 'heatmap_grid_model_differences.png'))
-    # plt.close()
-
-
-    # # loss per no. of HMC iterations
-    # plot_new_vs_init_loss(pmodel, pmodel_base, x_ts, y_ts_discounted, base_features, res_features)
-
-    

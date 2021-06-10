@@ -22,12 +22,10 @@ import tensorflow_addons as tfa
 #from functions.sub_actuarial import get_CFs_vectorized, predict_contract_vectorized, predict_rnn_contract_vectorized
 from functions.tf_loss_custom import compute_loss_mae
 from functions.tf_model_res import random_pretraining, combine_models, create_mortality_res_net, train_combined_model
-from functions.tf_model_res import train_combined_model_on_padded_data
-from functions.sub_visualization import mortality_rnn_heatmap, plot_new_vs_init_loss, mortality_heatmap, mortality_heatmap_grid, plot_implied_survival_curve
-from functions.sub_backtesting import check_exploded_gradients, check_model_mask_vs_no_mask
+from functions.sub_backtesting import check_exploded_gradients, check_model_mask_vs_no_mask, check_padding
 
 from global_vars import T_MAX, GAMMA
-from global_vars import path_data, path_models_baseline_transfer, path_models_resnet_with_padding_hpsearch
+from global_vars import path_data, path_models_baseline_transfer, path_models_resnet_with_padding_hpsearch_male, path_models_resnet_with_padding_hpsearch_female
 
 
 
@@ -35,10 +33,14 @@ if __name__ ==  '__main__':
 
     bool_train = True
     bool_mask = True # insert a masking layer into the model
+    baseline_sex = 'female'
 
-
-
-    path_model = path_models_resnet_with_padding_hpsearch
+    if baseline_sex == 'male':
+        path_model = path_models_resnet_with_padding_hpsearch_male
+    elif baseline_sex == 'female':
+        path_model = path_models_resnet_with_padding_hpsearch_female
+    else:
+        assert False, 'Unknown Option for baseline_sex.'
 
 
     #### load data
@@ -71,13 +73,20 @@ if __name__ ==  '__main__':
 
     loss = np.zeros((N_batches, len(LR_RATES)))
     #with strategy.scope():
-    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'survival_baseline_ts.h5'))
+    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
     pmodel_res = create_mortality_res_net(hidden_layers=[40, 40, 20], param_l2_penalty=0.1, input_shape=(None, len(res_features)), n_out=2)
     pmodel_res.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
-    
+    pmodel = combine_models(pmodel_base, pmodel_res, bool_masking = False)
+    pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam') # Note: we do not train, but only evaluate -> specifics of optimizer irrelevant
 
+    print('Checking the general padding mechanism of the model on sample x[10], y[10]')
+    check_padding(model = pmodel, x_nopad = x_ts[10], y_nopad = y_ts_discounted[10], base_feat = base_features, res_feat = res_features, n_pad = x_ts_pad.shape[1])
+    
+    print('\n', 'checking the masked vs the non-masked model:')
+    check_model_mask_vs_no_mask(x_base = x_ts_pad[:,:,base_features], x_res = x_ts_pad[:,:,res_features], y= y_ts_pad_discounted, model_base=pmodel_base, iterations=2)
+    print('\n')
 
     # part 1: check masking in res_model
     if True:
@@ -96,8 +105,8 @@ if __name__ ==  '__main__':
         # step 2: (optional Masking) -> Dense -> Dense -> GRU -> Dense -> Softmax
         model_debug = Model(pmodel_res.input, pmodel_res.output)
         model_debug.compile(loss = compute_loss_mae, optimizer='adam')
-        print('res-net')
-        print(model_debug.summary())
+        #print('res-net')
+        #print(model_debug.summary())
         pred_mask = model_debug(Masking(0.0)(x_ts_pad[id:id+quant,:,res_features]))
         pred_nomask = model_debug(x_ts_pad[id:id+quant,:,res_features])
         # print(pred_mask)
@@ -107,6 +116,7 @@ if __name__ ==  '__main__':
         assert(np.allclose(pred_mask*no_padding, pred_nomask*no_padding))
 
         # step 3: check loss for both models with costum loss function
+        print('Applying Masking as Preprocessing layer to input, outside of the tf.model:')
         print('custom loss (wo masking): ', compute_loss_mae(y_true = y_ts_pad_discounted[id:id+quant], y_pred=pred_nomask))
         print('\t evaluated loss: ', model_debug.evaluate(x=x_ts_pad[id:id+quant,:,res_features], y = y_ts_pad_discounted[id:id+quant], batch_size=1024))
         print('custom loss (with input-masking): ', compute_loss_mae(y_true = y_ts_pad_discounted[id:id+quant], y_pred=pred_mask))
@@ -123,28 +133,27 @@ if __name__ ==  '__main__':
         # step 1: Combined model with masking and without masking
         model_mask = combine_models(pmodel_base, pmodel_res, bool_masking = True)
         model_mask.compile(loss = compute_loss_mae, optimizer='adam')
-        model_mask.summary()
+        #model_mask.summary()
         model_nomask = combine_models(pmodel_base, pmodel_res, bool_masking = False)
         model_nomask.compile(loss = compute_loss_mae, optimizer='adam')
 
         pred_mask = model_mask.predict(x = [x_ts_pad[id:id+quant,:,base_features], x_ts_pad[id:id+quant,:,res_features]])
         pred_nomask = model_nomask.predict(x = [x_ts_pad[id:id+quant,:,base_features], x_ts_pad[id:id+quant,:,res_features]])
 
+
         # print(pred_mask)
         # print(pred_nomask)
         assert(np.allclose(pred_mask*mask, pred_nomask*mask))
-
+        print('prediction values nomask vs mask also equal within non-masked sequence-area if Masking-layer is included withing the model', '\n')
 
         # step 2: compare model_nomask with masked input (preprocessed) with model_mask
         pred_new = model_nomask.predict(x = [Masking(0.0)(x_ts_pad[id:id+quant,:,base_features]), Masking(0.0)(x_ts_pad[id:id+quant,:,res_features])])
-        # print(pred_mask)
-        # print(pred_new)
         assert(np.allclose(pred_nomask, pred_new)) #-> preprocessed input (via masking) does not pass the mask to subsequent layers
-        #assert(np.allclose(pred_mask, pred_new))
+        
 
 
         # step 3: compare losses; they should be equal, as the same weights are used and targets are zero-padded too -> hence provide an additional, natural masking for predictions at zero-padded time-steps
-        print('masking (model-integrated) vs no masking')
+        print('masking (model-integrated) vs no masking on all data:')
         x, y = [x_ts_pad[id:id+quant,:,base_features],x_ts_pad[id:id+quant,:,res_features]], y_ts_pad_discounted[id:id+quant]
         print('custom loss (wo masking): ', compute_loss_mae(y_true = y, y_pred=pred_nomask))
         print('\t evaluated loss: ', model_nomask.evaluate(x= x, y = y))#, batch_size=1024))
@@ -152,7 +161,7 @@ if __name__ ==  '__main__':
         print('\t evaluated loss: ', model_mask.evaluate(x=x, y = y))#, batch_size=1024))
 
         # padding should only affect times where also target values have vbeen zero-padded
-        assert(y_ts_pad_discounted[id:id+quant], y_ts_pad_discounted[id:id+quant]*mask)
+        assert((y_ts_pad_discounted[id:id+quant] == y_ts_pad_discounted[id:id+quant]*mask).all())
         exit()
         # assumption 1: evaluate is the mean loss over all batches, whereas loss(y_true, y_pred) is the global loss 
 

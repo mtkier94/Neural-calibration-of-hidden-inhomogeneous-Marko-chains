@@ -13,10 +13,9 @@ from tensorflow.keras.layers import GRU, Dense, Input
 from tensorflow.keras.models import Model
 
 
-from functions.sub_actuarial import get_CFs_vectorized, predict_contract_vectorized, predict_rnn_contract_vectorized
+from functions.sub_actuarial import predict_rnn_contract_vectorized
 from functions.tf_loss_custom import compute_loss_raw
-from functions.tf_model_res import create_mortality_res_net, combine_base_and_res_model
-from functions.sub_visualization import mortality_rnn_heatmap
+
 
 
 from global_vars import T_MAX, GAMMA
@@ -25,6 +24,7 @@ from global_vars import path_data, path_models_baseline_transfer
 
 if __name__ ==  '__main__':
 
+    baseline_sex = 'female'
     # speed-up by setting mixed-precision
     policy = tf.keras.mixed_precision.Policy('mixed_float16')
     tf.keras.mixed_precision.set_global_policy(policy)
@@ -60,12 +60,12 @@ if __name__ ==  '__main__':
 
 
     #with strategy.scope():
-    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer,r'survival_baseline_ts.h5'))
+    pmodel_base = tf.keras.models.load_model(os.path.join(path_models_baseline_transfer,r'rnn_davT{}.h5'.format(baseline_sex)))
     pmodel_base.compile(loss = compute_loss_raw, metrics=['mae'], optimizer = 'adam')
     # Note: To simplify debugging (optional), add run_eagerly = True flag to compiler
     # Downside of run_eagerly = True: Disabling graph-mode results in much slower tf-operations
 
-    p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008Tmale.csv'),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
 
 
     # display baseline loss - for individual contracts

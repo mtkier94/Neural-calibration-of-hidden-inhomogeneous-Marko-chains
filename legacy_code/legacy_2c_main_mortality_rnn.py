@@ -21,13 +21,21 @@ from global_vars import path_data, path_models_baseline_transfer
 
 if __name__ == '__main__':
 
+    raise ValueError('Content of this script has been moved/ appended to main_baseline.py')
+
+
     baseline_sex = 'female'
     p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
 
     if baseline_sex == 'female':
         p_other_sex = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format('male')),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
-    else:
+        tag_other_sex = 'DAVT2008male'
+    elif baseline_sex == 'male':
         p_other_sex = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format('female')),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
+        tag_other_sex = 'DAVT2008female'
+    else:
+        raise ValueError('Unknown baseline_sex')
+
     assert(T_MAX == len(p_survive)-1)
 
     freqs = [1,1/2, 1/3, 1/6, 1/12]
@@ -39,12 +47,14 @@ if __name__ == '__main__':
 
     # RNN inputs: A 3D tensor, with shape [batch, timesteps, feature]
     model_rnn = create_baseline_model_rnn(input_shape=(None, n_in), n_out= n_out, hidden_layers=[40,40,20])
-    model_rnn.summary()
+    #model_rnn.summary()
 
     
     if os.path.exists(os.path.join(path_models_baseline_transfer,  r'ffn_davT{}.h5'.format(baseline_sex))):
         model_pretrained = load_model(os.path.join(path_models_baseline_transfer,  r'ffn_davT{}.h5'.format(baseline_sex)))
-        
+        model_pretrained.evaluate(x,y, batch_size=64)
+        print('loss-type: ', model_pretrained.loss)
+
         transfer_weights_dense2simpleRNN(dense_model= model_pretrained, rnn_model = model_rnn)
         model_rnn.save(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))    
         print('Weights transferred from ffn to rnn!')
@@ -54,8 +64,7 @@ if __name__ == '__main__':
         print('Model cannot be loaded or trained!')
         exit()
 
-    model_pretrained.summary()
-    model_rnn.summary()
+
 
     pred = model_rnn.predict(x.reshape(1,-1,n_in))
     print('shape of predictions: ', pred.shape)

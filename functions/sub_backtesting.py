@@ -39,7 +39,7 @@ def check_exploded_gradients(model):
     return False
 
 
-def check_model_mask_vs_no_mask(x_base, x_res, y, model_base, iterations = 3, len_res_input = 4):
+def check_model_mask_vs_no_mask(x_base, x_res, y, model_base, iterations = 2, len_res_input = 4):
     '''
     Check whether including a masking layer of zero-padded input-sequence data x has an effect on performance or speed.
     Expected:   Loss values should equal (as zero-padded y provides a natural mask, since we multiply it with the predictions in the custom tf-loss compute_loss_mae)
@@ -56,24 +56,25 @@ def check_model_mask_vs_no_mask(x_base, x_res, y, model_base, iterations = 3, le
         None; loss values and times will be printed
     '''
 
-    for i in range(iterations):
-
+    for _ in range(iterations):
+        print('Generating res_net randomly ...')
         model_res = create_mortality_res_net(hidden_layers = [40,40,20], input_shape= (None, len_res_input), n_out=2)
         #model_mask = combine_models_with_masking(model_base = model_base, model_res = model_res)
         #model_mask.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
-        model_nomask = combine_models(model_base = model_base, model_res = model_res)
+        model_nomask = combine_models(model_base = model_base, model_res = model_res, bool_masking=False)
         model_nomask.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
-        if i == 0:
-            #model_mask.summary()
-            model_nomask.summary()
+        # if i == 0:
+        #     #model_mask.summary()
+        #     model_nomask.summary()
 
         pred_mask = model_nomask.predict([Masking(0.0)(x_base), Masking(0.0)(x_res)])
         pred_nomask = model_nomask.predict([x_base, x_res])
         #plt.plot((pred_mask-pred_nomask).flatten())
         #plt.show()
         assert(np.allclose(pred_mask, pred_nomask))
+        print('Prediction values of masked and non-masked input equal!', '\n')
 
         tic = time.time()
         model_nomask.evaluate(x = [Masking(0.0)(x_base), Masking(0.0)(x_res)], y= y, batch_size = 1024)
@@ -86,6 +87,7 @@ def check_model_mask_vs_no_mask(x_base, x_res, y, model_base, iterations = 3, le
         model_nomask.evaluate(x = [x_base, x_res], y= y, batch_size = 1024)
         print('\t time wo masking: ', time.time()-tic)
         print('\t tf_computation: ', compute_loss_mae(y_true = y, y_pred = pred_nomask))
+        print('--------------------------------------------------------------------')
 
 
 def check_padding(model, x_nopad, y_nopad, base_feat, res_feat, n_pad = 576):

@@ -187,22 +187,6 @@ if __name__ ==  '__main__':
             ax[i,j].set_ylabel('x')
     plt.show()
 
-
-    # print('mean, rel. smoker buffer: ', np.mean(val_dict['male']['nonsmoker'][index_low:index_up]/val_dict['male']['smoker'][index_low:index_up]))
-    # print('\t vals: ')
-    # print((val_dict['male']['nonsmoker'][index_low:index_up]/val_dict['male']['smoker'][index_low:index_up])[0:5, 0:5])
-    # print('\t vals: ')
-    # print((val_dict['female']['nonsmoker'][index_low:index_up]/val_dict['female']['smoker'][index_low:index_up])[0:5, 0:5])
-
-
-    # print('male: risk buffer for smoking')
-    # print('\t mean: ', np.mean(val_dict['male']['nonsmoker'][index_low:index_up] -val_dict['male']['smoker'][index_low:index_up]))
-    # print(val_dict['male']['nonsmoker'][index_low:index_up][0:10] -val_dict['male']['smoker'][index_low:index_up][0:10])
-    # print('female: risk buffer for smoking')
-    # print('\t mean: ', np.mean(val_dict['female']['nonsmoker'][index_low:index_up] -val_dict['female']['smoker'][index_low:index_up]))
-    # print(val_dict['female']['nonsmoker'][index_low:index_up][0:10] -val_dict['female']['smoker'][index_low:index_up][0:10])
-
-
     # loss per no. of HMC iterations
     plot_new_vs_init_loss(pmodel, pmodel_base, x_ts, y_ts_discounted, base_features, res_features, path_save = path_model)
 
