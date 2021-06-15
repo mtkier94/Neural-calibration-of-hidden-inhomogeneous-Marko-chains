@@ -36,6 +36,9 @@ def exp_decay_scheduler(epoch, lr):
     else:
         return lr
 
+def ES():
+    return tf.keras.callbacks.EarlyStopping(monitor='loss', patience=50, restore_best_weights=True)
+
 
 
 if __name__ ==  '__main__':
@@ -47,6 +50,7 @@ if __name__ ==  '__main__':
 
     baseline_sex = 'female'
     bool_train = False
+    EPOCHS = 300
     bool_mask = True # insert a masking layer into the model
 
     # speed-up by setting mixed-precision -> disable for now as it causes dtype issues in compute_loss, specifically when concatenating ones and cum_prob
@@ -104,9 +108,8 @@ if __name__ ==  '__main__':
 
     # HP_PARAMS (grid-search)
     # HP_PARAMS (fixed)
-    EPOCHS = 300
     l2_penalty = 0.0
-    callbacks = [tf.keras.callbacks.LearningRateScheduler(exp_decay_scheduler)]
+    callbacks = [tf.keras.callbacks.LearningRateScheduler(exp_decay_scheduler), ES()]
     LR_RATES = [1e-2,5e-3, 1e-3]#, 1e-4] #5e-2,  1e-5]
     HP_BZ = [32, 64, 128]
 
