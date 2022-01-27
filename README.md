@@ -1,6 +1,8 @@
-# Neural-calibration-of-hidden-inhomogeneous-Marko-chains
+# Neural calibration of hidden inhomogeneous Marko chains
+## Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C.
 
+#--------------------------------------------------------------------------------------------------------------
 
 ## Description of python-scripts
 Given the application of transfer learning/ pre-training, this project contains multiple main-files to be run step-by-step. The order the files are to be run in is indicated by the leading number of the python files. 
