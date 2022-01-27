@@ -17,6 +17,10 @@ These steps include:
 General information in "global_vars.py" includes
   - Paths for saving/ loading data
   - Hyperparameters such as cost structur and discount rate  (for cash flows)
+
+
+## Comments on the data
+tba
   
 
 ## Description of the folder structure:
