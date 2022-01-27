@@ -1,8 +1,10 @@
 
 import numpy as np
 from numba import njit, prange
+from global_vars import ALPHA, BETA, GAMMA1, GAMMA2
+# ALPHA, BETA, GAMMA1, GAMMA2 = 0.025, 0.03, 0.001, 0.001
 
-def get_CFs_vectorized(x, alpha = 0.025, beta = 0.03, gamma1 = 0.001, gamma2 = 0.001):
+def get_CFs_vectorized(x, alpha = ALPHA, beta = BETA, gamma1 = GAMMA1, gamma2 = GAMMA2):
     '''
         Get the time-series of cash-flows of contract x up to maturity n.
 
@@ -25,7 +27,7 @@ def get_CFs_vectorized(x, alpha = 0.025, beta = 0.03, gamma1 = 0.001, gamma2 = 0
     N_eff = int(N_eff[0])
     N_batch = len(x)
 
-    # matrix with no. of steps per row -> individualizacion with step-size comes next
+    # matrix with no. of steps per row -> individualization with step-size comes next
     steps = np.dot(freq*np.ones((N_batch, 1)),np.arange(int(N_eff)).reshape(1,N_eff))
 
     # alive: premium is paid, (alpha, beta, gamma1, gamma2) charges occur
@@ -36,6 +38,52 @@ def get_CFs_vectorized(x, alpha = 0.025, beta = 0.03, gamma1 = 0.001, gamma2 = 0
     CF_dead = P*freq*(steps<t) -S - P*alpha*t*(steps==0) - P*freq*beta*(steps<t) - S*freq*gamma1*(steps<t) - S*freq*gamma1*(steps>=t)
 
     return np.stack([CF_live, CF_dead], axis = -1)
+
+
+def get_CFs(x, alpha = ALPHA, beta = BETA, gamma1 = GAMMA1, gamma2 = GAMMA2):
+    '''
+        Get the time-series of cash-flows of contract x up to maturity n.
+        Note:   In contrast to get_CFs_vectorized, here we apply the operation for all rows in x, e.g. all contracts, simultaneously - despite different effective lengths n*m
+                We perform the same computation as in get_CFs_vectorized, but combine it with a mask, to set the CFs of matured CFs to zero
+
+        Inputs:
+        -------
+            x: contract details in the form of x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
+
+        Outsputs:
+            CF:     zero-padded array of cash-flows with shape (x.shape[0], max_steps, 2)
+                    Last dmension: Equal to no. of potential outcomes, e.g. alive, dead, disabled, ...; we currently only work with dead and alive.
+    '''
+
+    assert(len(x.shape)>1)
+
+    # recall: x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
+    _, n, t, freq = [x[:,i].reshape((-1,1))  for i in range(4)]
+    S,P = x[:, -2].reshape((-1,1)), x[:, -1].reshape((-1,1))
+    n_batch = len(x)
+
+
+    n_eff = (n/freq).astype('int') # effective durations, i.e. duration (in years) times sub-annual observations
+    iter_max = max(n_eff) # maximum sequence-length for zero-padding
+    mask_matured = (n_eff <= np.arange(iter_max))
+
+
+    # assert(np.max(n_eff)==np.min(n_eff))
+    # N_eff = int(n_eff[0])
+    # N_batch = len(x)
+
+    # matrix with no. of steps per row -> individualization with step-size comes next
+    steps = np.dot(freq*np.ones((n_batch, 1)),np.arange(iter_max).reshape(1,-1))
+
+    # alive: premium is paid, (alpha, beta, gamma1, gamma2) charges occur
+    # Note: steps.shape = (N_batch, N_eff); contract features with x[i].shape = (N_batch, 1)
+    # -> broadcasting applied
+    CF_live = (P*freq*(steps<t) - P*alpha*t*(steps==0) - P*freq*beta*(steps<t) - S*freq*gamma1*(steps<t) - S*freq*gamma1*(steps>=t))*mask_matured
+    # dead: premium is paid, Sum insured has to be paid, (alpha, beta, gamma1, gamma2) charges occur
+    CF_dead = (P*freq*(steps<t) -S - P*alpha*t*(steps==0) - P*freq*beta*(steps<t) - S*freq*gamma1*(steps<t) - S*freq*gamma1*(steps>=t))*mask_matured
+
+    return np.stack([CF_live, CF_dead], axis = -1)
+
 
 def predict_contract_vectorized(x, pmodel, discount, age_scale, bool_print_shapes = False):
     '''
@@ -151,6 +199,118 @@ def predict_rnn_contract_vectorized(x, y, pmodel, discount, bool_print_shapes = 
         print('vals shape: ', vals.shape, ' expected: ({},{},{})'.format(N_batch, N_eff, 2))
 
     return vals.reshape((N_batch,-1)).sum(axis=1).reshape((N_batch,1))
+
+
+def neural_annuity(freq, v, t_iter, y = None, x = None,  model = None):
+    '''
+    Compute the annuity value ä_{x:t}^{(m)} = \sum_{k=0}^{tm-1}} {}_{k}p_x
+    For simplicity, we display the formula in standard, actuarial notation. 
+    Note however, the transition probabilities {}_{k}p_x are taken from the neural network and implicitly depend on the input features (i.e. contract) and the past (semi-Markovian)
+
+    Inputs:
+    -------
+
+        freq:   frequency of payments, i.e. 1/m
+        v:      discount factor
+        t_iter: The number of iterations the premium is paid
+                Note: the original t value is the time-in-years. t_iter is time-in-year*payments-per-year
+        y:      predicted transition probabilities, i.e. model.predict(x)
+                -> faster than providing model and x separately
+        x:      optional input if y provided; otherwise x and model required
+                contract data in the input-format expected by model; 
+        model:  neural network, tf.keras.models.Model
+                -> optional, if y not provided
+           
+
+    Outputs:
+    --------
+        annuity:    vector of annuity values of shape (len(x), 1)
+    '''
+
+    # check whether either y or x and model provided
+    if type(y) == type(None):
+        assert(type(x) != type(None))
+        assert(type(model) != type(None))
+
+    # check shapes
+    if len(freq.shape) == 1:
+        freq = freq.reshape((-1,1))
+    if len(t_iter.shape) == 1:
+        t_iter = t_iter.reshape((-1,1))
+
+    # check if proper inputs are provided
+    if type(y) == type(None):
+        assert(type(model)!=type(None))
+
+
+    # Note: data x in format (N_batch, time-steps-to-maturity, N_features)
+    # we explicitly need to respect the number of iterations for with premiums are paid
+    # model.predict(x) with shape (N_batch, N_sequence, 2) with 2 = # of states, i.e. dead or alive 
+    if type(y) != type(None):
+        p_survive = y[:,:,0]
+    else:
+        p_survive = model.predict(x)[:,:,0]
+    # Note: do not forget to include {}_{0}p_x = 1
+    p_survive = np.concatenate([np.ones((p_survive.shape[0],1)), p_survive], axis= -1)
+
+    # Formula: annuity = \sum_{k=0}^{mt-1} 1/m*v^{k/m}*{}_{k/m}p_{a}
+    probs_cum = np.cumprod(p_survive, axis = -1)
+    N_batch, N_sequence = probs_cum.shape
+    discounting = v**((np.zeros((N_batch, N_sequence))+np.arange(N_sequence))*freq.reshape((N_batch,1)))
+
+    summands = freq*probs_cum*discounting
+    # cut off sum after t_iter
+    mask = (np.zeros((N_batch, N_sequence))+np.arange(N_sequence)) < t_iter
+    summands *= mask
+
+    # print('zero-values in mask: ', np.prod(mask.shape)-np.count_nonzero(mask))
+    # print('expected zero-values: ', np.prod(mask.shape)-np.sum(t_iter))
+
+    return np.sum(summands, axis = -1).reshape((-1,1))
+
+
+def neural_premium_zillmerisation(freq, v, t_iter, alpha, beta, y = None, x = None, model = None):
+    '''
+    Goal: Given a net-premium lump sum P_0, compute the factor for annuitization and zillmerisation of P_0.
+    Steps:
+        1) Compute the annuity value ä_{x:t}^{(m)} (-> neural_annuity - function)
+        2) For Zillmerisation, include cost-related factors for aquisition-, alpha- and beta-charges
+        3) Combine steps 1 and 2, i.e. zill_factor = ä_{x:t}^{(m)}(1-beta/m) -alpha*t
+            Note: the specifics of the computation depend on the assumptions on the underlying cost structure (alpha, beta, gamma_1, gamma_2)
+
+    Inputs:
+    -------
+        freq:   frequency of payments, i.e. 1/m
+        v:      discount factor
+        t_iter: The number of iterations the premium is paid
+                Note: the original t value is the time-in-years. t_iter is time-in-year*payments-per-year
+        alpha, beta:    cost-factors, hyperparameters in our setting
+        y:      predicted transition probabilities, i.e. model.predict(x)
+                -> faster than providing model and x separately
+        x:      optional input if y provided; otherwise x and model required
+                contract data in the input-format expected by model; 
+        model:  neural network, tf.keras.models.Model
+                -> optional, if y not provided 
+
+    Outputs:
+    --------
+        zill_factor:    vector of annuitising and zillmerising factors for each contract
+                        shape: (N_contracts, 1)
+    '''
+    # check appropriate shapes, i.e. avoid 1d-arrays
+    if len(freq.shape) == 1:
+        freq = freq.reshape((-1,1))
+    if len(t_iter.shape) == 1:
+        t_iter = t_iter.reshape((-1,1))
+
+    # check if proper inputs are provided
+    if type(y) == type(None):
+        annuity = neural_annuity(freq, v, t_iter, x=x, model=model)
+    else:
+        annuity = neural_annuity(freq, v, t_iter, y=y)
+    
+    # include costs into computation
+    return annuity*(1-beta)-alpha*t_iter*freq
 
 
 

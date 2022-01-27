@@ -14,6 +14,7 @@ def compute_loss_test(y_true, y_pred):
 def log_mae(y_true, y_pred):
     '''
     log-mean-absolute error, i.e. mae(log(y_true)-log(y_pred)), to improve accuracy for low-value mortality probabilities
+    -> depreciated
     '''
 
     return tf.reduce_mean(tf.math.abs(y_true**0.5-y_pred**0.5))
@@ -52,7 +53,10 @@ def compute_loss_raw(y_true, y_pred):
     cum_probs = tf.math.cumprod(y_pred[:,:,0:1], axis = 1)
     # broadcast and drop last entry/ last time-step
     cum_probs = tf.broadcast_to(cum_probs[:,0:-1], shape=tf.shape(y_true[:,0:-1,:]))
-    ones = tf.ones(tf.shape(y_true[:,0:1,:]))
+    ones = tf.ones(tf.shape(y_true[:,0:1,:])) 
+    # note: in the paper we describe this by [1, 0] in the appropriate shape, instead of using "ones". 
+    # Since the difference is only a constant, it does not affect the optimization.
+    
     cum_prob_concat = tf.concat([ones, cum_probs], axis=1)
     # prob of reaching time t and subsequently transitioning to states described in y_pred
     prob_eff = cum_prob_concat*y_pred
@@ -76,7 +80,7 @@ def compute_loss_raw(y_true, y_pred):
 @tf.function(experimental_relax_shapes = True) 
 def eval_loss_raw(y_true, y_pred):
     '''
-    Implementation equal to compute_loss_raw, expect that the final output is not reduced to a scalar, but the shape reflects the batch size.    
+    Implementation equal to compute_loss_raw, except that the final output is not reduced to a scalar, but the shape reflects the batch size.    
     '''
     
     # form cumulative survival probabilities to weight paths (of CFs)

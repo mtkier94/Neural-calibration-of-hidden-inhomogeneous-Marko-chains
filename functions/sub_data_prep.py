@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.utils import shuffle
 from itertools import product as iter_prod
 
-from functions.sub_actuarial import get_CFs_vectorized
+from functions.sub_actuarial import get_CFs_vectorized, get_CFs
 
 
 def prep_data(x, scale_age = (0,120), scale_freq = (0,1)):
@@ -24,22 +24,20 @@ def prep_data(x, scale_age = (0,120), scale_freq = (0,1)):
         prep: prepared data (e.g. with one-hot encoding) in the pd.DataFrame format
         scaler: MinMaxScaler object, fitted to the range of features in prep
     '''
-
-    #x['Zahlweise2'] = x.ZahlweiseInkasso.map(lambda x: (x=='HALBJAEHRLICH'))
-    #x['Zahlweise4'] = x.ZahlweiseInkasso.map(lambda x: (x=='VIERTELJAEHRLICH'))
-    #x['Zahlweise12'] = x.ZahlweiseInkasso.map(lambda x: (x=='MONATLICH'))
+    # encode frequency of payments numerically
     x['ZahlweiseNum'] = x.ZahlweiseInkasso.map(lambda x: (x=='JAEHRLICH')+(x=='HALBJAEHRLICH')/2+(x=='VIERTELJAEHRLICH')/4+(x=='MONATLICH')/12)
-
+    # one-hot enocode gender and smoker
     x['GeschlechtNum'] = x.GeschlechtVP1.map(lambda x: int(x=='MAENNLICH'))
     x['RauchertypNum'] = x.RauchertypVP1.map(lambda x: int(x=='NICHTRAUCHEN'))
 
     data = x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']].values
+    # Note: implicit scaling range [0,1]
     scaler = MinMaxScaler().fit(data)
     scaler.data_min_[0], scaler.data_max_[0] = scale_age
     scaler.data_min_[3], scaler.data_max_[3] = scale_freq
-    #data_scaled = scaler.transform(prep)
 
-    # Note: data not scaled; scaler simply fit to (training-)data
+    # Note: data not scaled yet, i.e. data_scaled = scaler.transform(data) not applied
+    # so far, scaler simply fit to (training-)data
     return data, scaler
 
 
@@ -59,6 +57,12 @@ def transform_to_timeseries(x):
         y:  target values (time series with cash-flows) for x
     
     '''
+
+    # Note: here we first group contracts batchwise by equal effective length (n*m), iterate each batch forward by the frequency of payments 1/m to obtain a time series
+    # and eventually save a list of 3d-tensors, each with (N_batch, N_steps, N_features)
+    # Eventually we realized zero-padded data to be preferable despite its high redundancy of e.g. locally more than 500 zero padded steps
+    # Therefore, this function is a legacy construct of testing non-zero-padded data
+    # By including masking of matured time-steps, this function might be sped-up.
 
     assert(len(x.shape) == 2)
     n_features = x.shape[1]
@@ -89,6 +93,8 @@ def transform_to_timeseries(x):
         #print('contracts, shape: ', contracts.shape)
         x_ts[k], y_ts[k] = contracts, CFs
     return x_ts, y_ts
+
+
 
 def apply_scaler(x, scaler):
     '''
@@ -169,3 +175,54 @@ def create_trainingdata_baseline(frequencies, surv_probs, age_scale):
     y[:,0] = 1-y[:,1] # fill in surv.-prob
 
     return x,y
+
+
+# def transform_to_timeseries(x):
+
+    #! Attempt to speed-up data processing; so far only prototype
+
+#     '''
+#     Transform contracts x to a timeseries with stepsize 'frequency' up to maturity 'duration.
+#     Create targets y, which per contract represent a timeseries with respective cash-flows, conditional that the state is reached.
+#     Note: to have the duration of all contracts match we apply zero padding (in contrast to previous functions as transform_to_timeseries_batchwise()).
+
+#     Inputs:
+#     -------
+#         x:  pd.DataFrame of expected format, stemming from function prep_data( )
+#             format: x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
+
+#     Outputs:
+#     --------    
+#         x:  transformed pd.DateFrame with list (timeseries) per contract
+#         y:  target values (time series with cash-flows) for x
+    
+#     '''
+
+#     assert(len(x.shape) == 2)
+#     n_contracts, n_features = x.shape
+
+#     n_eff = (x[:,1]/x[:,3]).astype('int') # effective duration per contract, respecting step-size x[:,3]
+#     iter_max = np.max(n_eff)
+#     print(np.unique(n_eff))
+
+#     # create mask for each contract and the respective sequence length, checking whether the contract has already matured
+#     # note: '<' and not '<=' as at maturity ('=') the contract is terminated
+#     #! broadcasting of mask does not work yet
+#     mask_matured = (np.zeros((n_contracts,iter_max))+np.arange(iter_max))< n_eff.reshape((-1,1)).astype('int')
+#     #mask_matured = ((np.ones((n_contracts, iter_max))*np.arange(iter_max))< n_eff.reshape((-1,1))).astype('int')
+#     print('shape of mask: ', mask_matured.shape)
+#     print(np.sum(mask_matured==0))
+
+
+#     # zero padded time-series objects
+#     x_ts = np.zeros((n_contracts, iter_max, n_features))
+#     y_ts = np.zeros((n_contracts, iter_max, 2)) # cash flow values for states active and dead
+
+
+#     y_ts = get_CFs(x)
+#     contracts = np.stack([np.concatenate([x[:,0:1]+k*x[:,3:4],x[:,1:]], axis = -1) for k in range(iter_max)], axis=0)
+#     contracts = np.swapaxes(contracts, axis1=0, axis2=1)
+#     print('contracts shape: ', contracts.shape)
+#     # swap axis and apply (i.e. broadcast) the mask accross all features
+#     x_ts = np.array([contracts[:,i:i+1,:]*mask_matured[:,i:i+1] for i in range(iter_max)])
+#     return x_ts, y_ts

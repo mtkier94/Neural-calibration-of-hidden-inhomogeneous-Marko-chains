@@ -280,3 +280,21 @@ def predict_rnn_contract_vectorized(x, y, pmodel, discount, bool_print_shapes = 
         print('vals shape: ', vals.shape, ' expected: ({},{},{})'.format(N_batch, N_eff, 2))
 
     return vals.reshape((N_batch,-1)).sum(axis=1).reshape((-1,1))
+
+
+def check_test_data(data_train, data_test):
+    '''
+    train- and test-data should be equal everywhere, except for the recorded premium-value, i.e. the last feature of the 3-dim tensor of shape (N_samples, N_timesteps, N_features)
+
+    Note:   The value of the last feature is 0 in the raw format; in the [-1,1] scaled format the value is not equal to zero,  since the min-premium-value is not zero and zero is not even in the min-max-range. 
+            This does not create issues as we will disregard the value either way.
+    '''
+
+    check = np.alltrue(data_train[:,:,0:-1] == data_test[:,:,0:-1])
+
+    if check:
+        print('-------------------------------------------------')
+        print('Loaded test data is consistent with training data.')
+        print('-------------------------------------------------')
+    else:
+        raise ValueError('Test and training data are not consistent. They differ in more than just the premium-value!')

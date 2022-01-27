@@ -31,7 +31,7 @@ def create_mortality_res_net(hidden_layers = [40,40,20], param_l2_penalty = 0.1,
         model       tf.model.Model() architecture, no trained weights yet
     '''
 
-    assert(len(hidden_layers)>2)
+    assert(len(hidden_layers)>1)
 
     INPUT = Input(shape=input_shape)
     h = Dense(units = hidden_layers[0], activation = 'relu', kernel_regularizer=L2(param_l2_penalty))(INPUT)
@@ -44,7 +44,43 @@ def create_mortality_res_net(hidden_layers = [40,40,20], param_l2_penalty = 0.1,
     OUTPUT = tf.keras.layers.Activation('softmax')(h)
 
     model = Model(INPUT, OUTPUT)
-    model.compile(loss = tf.keras.losses.KLDivergence(), metrics=['mae'], optimizer='adam') 
+    # model.compile(loss = tf.keras.losses.KLDivergence(), metrics=['mae'], optimizer='adam') 
+
+    return model
+
+def create_mortality_res_net_special(dense_layers = [40,40], recurrent_layers = [20], param_l2_penalty = 0.1, input_shape=(None, 4), n_out=2):
+    '''
+    Altered version of "create_mortality_res_net" which allows also for setting (and tuning) the number of recurrent layers.
+
+    Inputs:
+    -------
+        dense_layers:  widths (and implicitely count) of hidden dense layers
+        recurrent_layers:  widths (and implicitely count) of hidden recurrent layers
+        n_in:           number of inputs units
+        n_out:          number of output units
+
+    Outputs:
+    --------
+        model       tf.model.Model() architecture, no trained weights yet
+    '''
+
+    assert(len(dense_layers)>=1)
+    assert(len(recurrent_layers)>=1)
+
+
+    INPUT = Input(shape=input_shape)
+    h = Dense(units = dense_layers[0], activation = 'relu', kernel_regularizer=L2(param_l2_penalty))(INPUT)
+    for k in dense_layers[1:-1]:
+        h = Dense(units = k, activation = 'relu', kernel_regularizer=L2(param_l2_penalty))(h)
+    for k in recurrent_layers:
+        h = GRU(units = k, activation = 'tanh', return_sequences = True, kernel_regularizer=L2(param_l2_penalty))(h)
+    # create activation as explicit layer -> transfer learning for when model_base and model_res for transition-probabilities will be combined
+    # i.e. eventually pred(x) = softmax(pred_base_prior_softmax(x) + pred_res_prior_softmax(x))
+    h = Dense(units = n_out, activation = 'linear', kernel_regularizer=L2(param_l2_penalty))(h)
+    OUTPUT = tf.keras.layers.Activation('softmax')(h)
+
+    model = Model(INPUT, OUTPUT)
+    # model.compile(loss = tf.keras.losses.KLDivergence(), metrics=['mae'], optimizer='adam') 
 
     return model
 
