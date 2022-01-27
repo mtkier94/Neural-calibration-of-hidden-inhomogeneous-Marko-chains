@@ -1,4 +1,5 @@
-# exclude specific files
+# Exclude specific files due to github size-contraints (<= 100 MB)
+# Note: Given the source-data "Tarifierung_RI_2017.csv", the files listed below can be obtained by simply running the file "0_main_data_processing.py" and, implicitly, the helper-functions included in this script 
 data/x_test.npy
 data/x_test_raw.npy
 data/x_train.npy
