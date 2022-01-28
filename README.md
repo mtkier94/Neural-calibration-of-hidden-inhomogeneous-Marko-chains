@@ -6,13 +6,13 @@ Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C
 Given the application of transfer learning/ pre-training, this project contains multiple main-files to be run step-by-step. The order the files are to be run in is indicated by the leading number of the python files. 
 
 These steps include:
-  - Data generation and preprocessing ( 0_main_data_processing.py )
-  - Exploratory data analysis ( 1_main_eda.py )
+  - Data generation and preprocessing (0_main_data_processing.py)
+  - Exploratory data analysis (1_main_eda.py)
   - Configuration of the baseline model ( 2_main_baseline.py )
   - Configuration of the residual model <br/>
-        * Option a): manual hp-tuning: 3a_main_hp_manual.py<br/>
-        * Option b): automated hp-tuning: 3b_main_hyperopt.py<br/>
-  - Analyze results, create heatmaps for policyholder-/ risk-types, intrinsic model validation ( 4_main_analysis_results.py )
+        * Option a): manual hp-tuning (3a_main_hp_manual.py)<br/>
+        * Option b): automated hp-tuning: (3b_main_hyperopt.py)<br/>
+  - Analyze results, create heatmaps for policyholder-/ risk-types, intrinsic model validation (4_main_analysis_results.py)
   
 General information in "global_vars.py" includes
   - Paths for saving/ loading data
