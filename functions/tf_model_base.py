@@ -1,14 +1,11 @@
 
 import numpy as np
 import os
-from numba import njit, prange
 import time
-import matplotlib.pyplot as plt
 
 import tensorflow as tf
-from tensorflow.keras.layers import Dense,GRU, Input, SimpleRNN
+from tensorflow.keras.layers import Dense, Input, SimpleRNN
 from tensorflow.keras.models import  Model, load_model
-from tensorflow.keras.regularizers import L1, L2
 
 
 def create_baseline_model_ffn(n_in = 2, n_out = 2, h_units = [40,40,20], h_actv = ['relu', 'relu', 'tanh'], tf_loss_function = tf.keras.losses.KLDivergence(), optimizer = 'adam'):

@@ -1,26 +1,18 @@
-# from tensorflow.python.data.ops.dataset_ops import Dataset
-# from tensorflow.python.keras.optimizer_v2.adam import Adam
-# from tensorflow.python.lib.io.file_io import copy_v2
-# from tensorflow.python.ops.math_ops import argmin
 from functions.sub_hyperopt import hpsearch_model
 import numpy as np
 import pickle 
 import os, time, joblib
-# from copy import Error, deepcopy
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import load_model, save_model
 from tensorflow.keras.callbacks import LearningRateScheduler, EarlyStopping
 from tensorflow.keras.optimizers import Adam
-# import tensorflow_addons as tfa
 from hyperopt import fmin, tpe, STATUS_OK, Trials, space_eval
-from hyperopt.plotting import main_plot_history #, miscs_to_idxs_vals
+from hyperopt.plotting import main_plot_history
 
 
 
 from functions.tf_loss_custom import compute_loss_mae
-# from functions.tf_model_res import combine_models, create_mortality_res_net
-# from functions.sub_backtesting import check_exploded_gradients
 from functions.sub_hyperopt import hpsearch_model, get_search_space
 from global_vars import path_data, path_models_baseline_transfer, path_hyperopt_female, path_hyperopt_male
 

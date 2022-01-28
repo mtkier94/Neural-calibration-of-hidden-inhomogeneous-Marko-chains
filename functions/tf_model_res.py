@@ -1,13 +1,12 @@
 
 import numpy as np
-from numba import njit, prange
 import time
 from copy import deepcopy, copy
 
 import tensorflow as tf
-from tensorflow.keras.layers import Dense,GRU, Input, SimpleRNN
-from tensorflow.keras.models import  Model, clone_model
-from tensorflow.keras.regularizers import L1, L2
+from tensorflow.keras.layers import Dense,GRU, Input
+from tensorflow.keras.models import  Model
+from tensorflow.keras.regularizers import L2
 
 from functions.tf_loss_custom import compute_loss_mae
 
@@ -283,117 +282,3 @@ def train_combined_model_on_padded_data(pmodel, tf_data=None, x = None, y = None
     history += pmodel.history.history['loss']
 
     return history
-   
-
-
-
-# --------------------------------------------------------------------------------------------
-# Legacy code
-
-
-# def combine_models_with_masking(model_base, model_res):
-#     ''' 
-#     DEPRECIATED !!! MASKING-LAYER SHOWS UNEXPECTED BEHAVIOUR
-#     Create a model (seq2seq-type) which predicts one-step-transition probabilities.
-#     We assume  1-step-trans-prob(x) = baseline_mortality(x)+ mortality_res(x).
-#     Note:   The baseline will be fixed (non-trainable)
-#             To combine the two models we further assume that for both holds model.layer[-1] -> softmax-activation layer
-                
-
-#     Inputs:
-#     -------
-#         model_base: baseline_mortality
-#         model_res:  residual mortality, e.g. for specific type of customer
-
-#     Outputs:
-#     --------
-#         model   tf.model.Model() which combines the two input model
-#     '''
-
-#     assert 1==False, 'function currently not in use!'
-
-#     # mbase = (model_base)
-#     # mres = (model_res)
-
-
-#     # mbase.trainable = False
-#     # new_in_base, new_in_res = deepcopy(model_base.input), deepcopy(model_res.input)
-#     # input_base_masked, input_res_masked = tf.keras.layers.Masking(mask_value=0.0)(new_in_base), tf.keras.layers.Masking(mask_value=0.0)(new_in_res)
-#     # model_tail = Model(inputs=[mbase.input, mres.input], 
-#     #                  outputs= tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()([mbase.layers[-2].output, mres.layers[-2].output])))
-
-#     # out = model_tail([input_base_masked, input_res_masked])
-
-#     return Model(inputs = [tf.keras.layers.Masking(0.0)(model_base.input), tf.keras.layers.Masking(0.0)(model_res.input)], 
-#                 outputs = tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()([model_base.layers[-2].output, model_res.layers[-2].output])))
-#     # return Model(inputs = [new_in_base, new_in_res], outputs = tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()([mbase.layers[-2].output, mres.layers[-2].output])))
-
-    
-#     # input_base, input_res = model_base.input, model_res.input
-#     # input_base_masked, input_res_masked = tf.keras.layers.Masking(mask_value=0.0)(input_base), tf.keras.layers.Masking(mask_value=0.0)(input_res)
-
-#     # model_tail = Model(inputs=[model_base.input, model_res.input], 
-#     #                 outputs= tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()([model_base.layers[-2].output, model_res.layers[-2].output])))
-    
-#     # OUTPUT = model_tail([input_base_masked, input_res_masked])
-
-#     # # add masking right after input
-#     # # disadvantage: model summary contains functional tf-model -> layers cannot simply be iterated over
-#     # model = Model(inputs = [input_base, input_res], outputs= OUTPUT )
-
-#     # # add masking at the end
-#     # # return Model(inputs=[model_base.input, model_res.input], 
-#     # #                 outputs= tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()(
-#     # #                     [tf.keras.layers.Masking(mask_value=0.0)(model_base.layers[-2].output), 
-#     # #                     tf.keras.layers.Masking(mask_value=0.0)(model_res.layers[-2].output)])))
-#     # return model
-
-#---------------------------------------------------------------------------------------------------------------------------
-
-# def combine_models(model_base, model_res):
-#     '''
-#     DEPRECIATED! Masking layer shows no speed-up. In fact, model evaluation ca. 50% faster when not inserting embedding layer!
-#         -> Note: As we also zero-pad the target-values y (CFs), y naturally provide a mask since they are multiplied with the predictions in custom tf-loss function compute_loss_mae!!
-#     New version of original combine_base_and_res_model. Add masking of zero-padded input-sequence values to model.
-#     Note: slicing of input, e.g. via a lambda layer is impractical -> we stick with two separate input heads for model_base and model_res
-
-#     Inputs:
-#     -------
-#         model_base: baseline_mortality
-#         model_res:  residual mortality, e.g. for specific type of customer
-        
-
-#     Outputs:
-#     --------
-#         model   tf.model.Model() which combines the two input model
-#     '''
-
-#     assert True, 'Function depreciated, read documentation for more information.'
-
-#     #INPUT = tf.keras.layers.Input(input_shape)
-    
-#     input_base, input_res = model_base.input, model_res.input
-#     # assert(len(id_feat_base)==input_base.shape[-1])
-#     # assert(len(id_feat_res)==input_res.shape[-1])
-#     # # explicitely set no. of timesteps for recurrent network
-#     # #input_base = Input(shape=(input_res.get_shape()[1], len(id_feat_base)))
-#     input_base_masked, input_res_masked = tf.keras.layers.Masking(mask_value=0.0)(input_base), tf.keras.layers.Masking(mask_value=0.0)(input_res)
-
-#     # #input_base = tf.keras.layers.Concatenate(axis=-1)([tf.keras.layers.Lambda(lambda x: x[:,:,feat])(input_masked) for feat in id_feat_base]) 
-#     # #input_res = tf.keras.layers.Concatenate(axis=-1)([tf.keras.layers.Lambda(lambda x: x[:,:,feat])(input_masked) for feat in id_feat_res]) 
-
-#     model_tail = Model(inputs=[model_base.input, model_res.input], 
-#                     outputs= tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()([model_base.layers[-2].output, model_res.layers[-2].output])))
-    
-#     OUTPUT = model_tail([input_base_masked, input_res_masked])
-
-#     # add masking right after input
-#     # disadvantage: model summary contains functional tf-model -> layers cannot simply be iterated over
-#     model = Model(inputs = [input_base, input_res], outputs= OUTPUT )
-
-#     # add masking at the end
-#     # return Model(inputs=[model_base.input, model_res.input], 
-#     #                 outputs= tf.keras.layers.Activation('softmax')(tf.keras.layers.Add()(
-#     #                     [tf.keras.layers.Masking(mask_value=0.0)(model_base.layers[-2].output), 
-#     #                     tf.keras.layers.Masking(mask_value=0.0)(model_res.layers[-2].output)])))
-#     return model

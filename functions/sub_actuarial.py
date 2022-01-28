@@ -1,8 +1,6 @@
 
 import numpy as np
-from numba import njit, prange
 from global_vars import ALPHA, BETA, GAMMA1, GAMMA2
-# ALPHA, BETA, GAMMA1, GAMMA2 = 0.025, 0.03, 0.001, 0.001
 
 def get_CFs_vectorized(x, alpha = ALPHA, beta = BETA, gamma1 = GAMMA1, gamma2 = GAMMA2):
     '''

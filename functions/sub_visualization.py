@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import os
 
-from tensorflow.python.lib.io.file_io import copy
 
 
 def plot_implied_survival_curve(pmodel, dav_table, dav_table2 = None, age_max = 121, path_save = None, baseline_tag ='male', age_range = None):

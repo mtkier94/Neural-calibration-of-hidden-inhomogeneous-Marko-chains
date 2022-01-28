@@ -1,4 +1,4 @@
-from hyperopt import hp, space_eval
+from hyperopt import hp
 from hyperopt.pyll import scope
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam

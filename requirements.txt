@@ -1,0 +1,13 @@
+hyperopt==0.2.5
+joblib==1.0.1
+matplotlib==3.3.4
+numba==0.53.1
+numpy==1.20.1
+pandas==1.2.4
+pickle5==0.0.11
+scikit_learn==1.0.2
+scipy==1.6.2
+seaborn==0.11.1
+tensorboard==2.2.1
+tensorflow==2.0.0
+tensorflow_addons==0.12.1

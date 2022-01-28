@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np 
 import os
 
-from functions.sub_data_prep import apply_scaler, prep_data, scale_timeseries, transform_to_timeseries
+from functions.sub_data_prep import prep_data, scale_timeseries, transform_to_timeseries
 
 from global_vars import T_MAX, GAMMA
 from global_vars import path_data, path_data_backtesting

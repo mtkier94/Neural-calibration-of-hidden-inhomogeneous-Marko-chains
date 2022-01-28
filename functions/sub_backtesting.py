@@ -1,10 +1,8 @@
 import numpy as np
-from numba import njit, prange
 import time
-import matplotlib.pyplot as plt
 
 #import tensorflow as tf
-from tensorflow.keras.layers import SimpleRNN, Dense, Input
+from tensorflow.keras.layers import SimpleRNN, Input
 from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.layers.core import Masking
 

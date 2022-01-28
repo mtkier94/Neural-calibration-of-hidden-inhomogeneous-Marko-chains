@@ -1,12 +1,10 @@
-import pandas as pd 
 import numpy as np 
-import os, copy, sys
+import copy
 
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.utils import shuffle
 from itertools import product as iter_prod
 
-from functions.sub_actuarial import get_CFs_vectorized, get_CFs
+from functions.sub_actuarial import get_CFs_vectorized
 
 
 def prep_data(x, scale_age = (0,120), scale_freq = (0,1)):
@@ -175,54 +173,3 @@ def create_trainingdata_baseline(frequencies, surv_probs, age_scale):
     y[:,0] = 1-y[:,1] # fill in surv.-prob
 
     return x,y
-
-
-# def transform_to_timeseries(x):
-
-    #! Attempt to speed-up data processing; so far only prototype
-
-#     '''
-#     Transform contracts x to a timeseries with stepsize 'frequency' up to maturity 'duration.
-#     Create targets y, which per contract represent a timeseries with respective cash-flows, conditional that the state is reached.
-#     Note: to have the duration of all contracts match we apply zero padding (in contrast to previous functions as transform_to_timeseries_batchwise()).
-
-#     Inputs:
-#     -------
-#         x:  pd.DataFrame of expected format, stemming from function prep_data( )
-#             format: x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
-
-#     Outputs:
-#     --------    
-#         x:  transformed pd.DateFrame with list (timeseries) per contract
-#         y:  target values (time series with cash-flows) for x
-    
-#     '''
-
-#     assert(len(x.shape) == 2)
-#     n_contracts, n_features = x.shape
-
-#     n_eff = (x[:,1]/x[:,3]).astype('int') # effective duration per contract, respecting step-size x[:,3]
-#     iter_max = np.max(n_eff)
-#     print(np.unique(n_eff))
-
-#     # create mask for each contract and the respective sequence length, checking whether the contract has already matured
-#     # note: '<' and not '<=' as at maturity ('=') the contract is terminated
-#     #! broadcasting of mask does not work yet
-#     mask_matured = (np.zeros((n_contracts,iter_max))+np.arange(iter_max))< n_eff.reshape((-1,1)).astype('int')
-#     #mask_matured = ((np.ones((n_contracts, iter_max))*np.arange(iter_max))< n_eff.reshape((-1,1))).astype('int')
-#     print('shape of mask: ', mask_matured.shape)
-#     print(np.sum(mask_matured==0))
-
-
-#     # zero padded time-series objects
-#     x_ts = np.zeros((n_contracts, iter_max, n_features))
-#     y_ts = np.zeros((n_contracts, iter_max, 2)) # cash flow values for states active and dead
-
-
-#     y_ts = get_CFs(x)
-#     contracts = np.stack([np.concatenate([x[:,0:1]+k*x[:,3:4],x[:,1:]], axis = -1) for k in range(iter_max)], axis=0)
-#     contracts = np.swapaxes(contracts, axis1=0, axis2=1)
-#     print('contracts shape: ', contracts.shape)
-#     # swap axis and apply (i.e. broadcast) the mask accross all features
-#     x_ts = np.array([contracts[:,i:i+1,:]*mask_matured[:,i:i+1] for i in range(iter_max)])
-#     return x_ts, y_ts
