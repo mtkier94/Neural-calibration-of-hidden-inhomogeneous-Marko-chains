@@ -4,3 +4,9 @@ data/x_test.npy
 data/x_test_raw.npy
 data/x_train.npy
 data/x_train_raw.npy
+data/y_train.npy
+data/y_test.npy
+# Excluded (so far) due to data confidentiality
+data/Tarifierung_RI_2017.csv
+data/Data.npy
+data/backtesting/

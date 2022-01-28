@@ -37,13 +37,9 @@ def ES():
 
 
 
+def run_main(baseline_sex, bool_train):
 
-if __name__ == '__main__':
-
-    bool_train = False # <-- if true, saved baseline-models (ffn and rnn) will be overwritten (!!)
     callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule), ES()]
-
-    baseline_sex = 'male'
     p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
     assert(T_MAX==len(p_survive)-1) # table starts at age 0
 
@@ -56,11 +52,7 @@ if __name__ == '__main__':
     else:
         raise ValueError('Unknown baseline_sex')
     
-    
-    if bool_train:
-        print('------------------------------------------------')
-        print('\t NOTE: baseline surv-model will be trained!')
-    print('------------------------------------------------')
+            
     print('\t tensorflow-version: ', tf.__version__)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     print('\t tensorflow-warnings: off')
@@ -82,6 +74,15 @@ if __name__ == '__main__':
     n_out = 2    
 
     if bool_train:
+
+        print('------------------------------------------------')
+        print('\t NOTE: baseline surv-model will be trained!')
+        print('\t This is currently manually disabled, as it will require a full recallibration of the subsequent, residual network.')
+        print('\t To activate a retraining of the baseline model, uncomment ValueError in subsequent line.')
+        raise ValueError('Training of baseline model deactivated!')
+        print('------------------------------------------------')
+
+
         model = create_baseline_model_ffn(n_in=n_in, n_out=n_out, h_units=WIDTHS, h_actv= ['relu']*(len(WIDTHS)-1)+['tanh'], 
                                     tf_loss_function = tf.keras.losses.KLDivergence(),#'mae', #'mean_squared_logarithmic_error', #
                                     optimizer=tf.keras.optimizers.Adam(lr=LRATE))
@@ -140,14 +141,15 @@ if __name__ == '__main__':
         plt.plot(x[k:-1:len(freqs),0]*T_MAX, model.predict(x[k:-1:len(freqs),:])[:,1], linestyle = '--', color = 'orange')
         # plt.plot(x[k:-1:len(freqs),0]*T_MAX, model.predict(x[k:-1:len(freqs),:])[:,1], linestyle = '--', color = 'green')
     plt.yscale('log')
-    plt.xlabel('age')
+    plt.xlabel('age', fontsize = 'x-large')
 
     # create labels
     plt.plot(x[k:-1:len(freqs),0]*T_MAX, y[k:-1:len(freqs),1], linestyle = '-', color = 'black', label = r'$\mathcal{D}_{DAV}($' + baseline_sex+r')')
     plt.plot(x[k:-1:len(freqs),0]*T_MAX, model.predict(x[k:-1:len(freqs),:])[:,1], linestyle = '--', color = 'orange', label = r'$\hat{\pi}_{base}$')
-    plt.legend()
+    plt.legend(fontsize = 'large')
     plt.savefig(os.path.join(path_models_baseline_transfer, 'baseline_fit_{}.eps'.format(baseline_sex)), format = 'eps')
-    plt.show()
+    # plt.show()
+    plt.close()
     
     if False:
         # visualize fit of FFN and RNN vs baseline-DAV-table
@@ -163,3 +165,13 @@ if __name__ == '__main__':
         plt.title('Fit - FFN vs. RNN vs DAVT2008{}'.format(baseline_sex))
         plt.legend()
         plt.show()
+
+
+if __name__ == '__main__':
+
+    bool_train = False
+    # baseline_sex = 'male'
+
+    for baseline_sex in ['male', 'female']: #, 'female']:
+
+        run_main(baseline_sex, bool_train)

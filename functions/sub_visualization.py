@@ -467,14 +467,14 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
     plt.scatter(range(1,len(error)+1), error, marker = '+', color = 'green', alpha = 0.4)
     plt.plot([0,len(error)], [q_low,q_low], linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
     plt.plot([0,len(error)], [q_up,q_up], linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
-    plt.ylabel(error_type+' error')
+    plt.ylabel(error_type+' error', fontsize = 'x-large')
     if error_type == 'relative':
         # manual rescaling of axis to have approx. same scale for both genders
         plt.ylim((min(ylim[0], np.min(error)), max(ylim[1], np.max(error))))
-    plt.xlabel('contracts', fontsize = 'large')
+    plt.xlabel('contracts', fontsize = 'x-large')
     plt.tight_layout()
     # plot png format, as it captures the distribution implicitely via the transparency value alpha in the plot
-    plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}.png'))
+    plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}.png'), dpi=400)
     plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}.eps'))
     plt.close()
     # print(error_type+' error plot wo. decomposition saved.')
@@ -519,6 +519,6 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
     plt.tight_layout()
     plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}_decomposition.eps'))
     # plot png format, as it captures the distribution implicitely via the transparency value alpha in the plot
-    plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}_decomposition.png')) 
+    plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}_decomposition.png'), dpi=400) 
     plt.close()
     # print(error_type+' error plot wo. decomposition saved.')
