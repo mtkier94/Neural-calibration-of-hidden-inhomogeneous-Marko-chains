@@ -2,7 +2,6 @@
 import numpy as np
 import os
 import time
-
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Input, SimpleRNN
 from tensorflow.keras.models import  Model, load_model
@@ -72,11 +71,6 @@ def create_train_save_model_base(X, Y, h_units, learning_rate, epochs, batch_sz,
         model:  tf-Model with trained weights; Note: if weights have been loaded the attribute model.history.history will be empty
         history:    dictionary of training history of model, potentially loaded from path_save
     '''
-
-    # check if one option of data (either np.arrays or tf.data.Dataset) provided
-    # if (type(X)!=type(np.array(1))) or (type(Y)!=type(np.array(1))) or type(tf_data) != type(tf.data.Dataset.from_tensor_slices((np.array(1),np.array(1)))):
-    #     print('Error: No valid training data provided!')
-    #     raise ValueError
 
     # create model
     model = create_baseline_model_ffn(n_in=n_in, n_out=n_out, h_units=h_units, h_actv= act_func, tf_loss_function = loss_function, 
@@ -175,7 +169,6 @@ def transfer_weights_dense2simpleRNN(dense_model, rnn_model):
         # only second-last hidden layer different between ffw and rnn
         # Note: last hidden layer is the explicit activation layer
         if l_new != rnn_model.layers[-3]:
-            #print('l_new: ', l_new)
             l_new.set_weights(l_trained.get_weights())
         else:
             # SimpleRNN with additional memory-related matrix at position 1

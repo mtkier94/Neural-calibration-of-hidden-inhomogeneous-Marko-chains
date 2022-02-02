@@ -5,6 +5,7 @@ class LRFind(tf.keras.callbacks.Callback):
     '''
     See https://sachinruk.github.io/blog/tensorflow/learning%20rate/2021/02/15/Tensorflow-Learning-Rate-Finder.html.
     Did not prove usefull for tuning the baseline model, i.e. fitting the DAV-table
+    -> currently not applied to project
     '''
 
     def __init__(self, min_lr, max_lr, n_rounds): 

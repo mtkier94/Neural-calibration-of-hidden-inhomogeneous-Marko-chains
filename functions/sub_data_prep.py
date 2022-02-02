@@ -1,6 +1,5 @@
 import numpy as np 
 import copy
-
 from sklearn.preprocessing import MinMaxScaler
 from itertools import product as iter_prod
 
@@ -115,7 +114,7 @@ def apply_scaler(x, scaler):
     elif len(x.shape) == 2:
         feat_min, feat_max = scaler.data_min_.reshape((1,-1)), scaler.data_max_.reshape((1,-1))
     else:
-        ValueError
+        raise ValueError('Shape not compatible!')
 
     return (x-feat_min)/(feat_max-feat_min)
 
@@ -138,8 +137,6 @@ def scale_timeseries(x, scaler):
 
     for k in range(len(x)):
         x_scaled[k] = apply_scaler(x[k], scaler)
-        #for t in range(x[k].shape[1]):
-            #x_scaled[k][:,t,:] = x[k][:,t,:]
 
     return x_scaled
 

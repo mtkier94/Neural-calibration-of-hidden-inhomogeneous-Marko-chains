@@ -63,14 +63,8 @@ def check_model_mask_vs_no_mask(x_base, x_res, y, model_base, iterations = 2, le
         model_nomask = combine_models(model_base = model_base, model_res = model_res, bool_masking=False)
         model_nomask.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam')
 
-        # if i == 0:
-        #     #model_mask.summary()
-        #     model_nomask.summary()
-
         pred_mask = model_nomask.predict([Masking(0.0)(x_base), Masking(0.0)(x_res)])
         pred_nomask = model_nomask.predict([x_base, x_res])
-        #plt.plot((pred_mask-pred_nomask).flatten())
-        #plt.show()
         assert(np.allclose(pred_mask, pred_nomask))
         print('Prediction values of masked and non-masked input equal!', '\n')
 
@@ -139,7 +133,6 @@ def check_if_rnn_version(model_ffn, model_rnn):
 
     # loop over layers
     for l_ffn, l_rnn in zip(model_ffn.layers, model_rnn.layers):
-        #print(type(l_ffn), type(l_rnn))
         if type(l_rnn) != type(SimpleRNN(1)):
             bool_lst += [(w_ffn == w_rnn).all() for w_ffn, w_rnn in zip(l_ffn.get_weights(), l_rnn.get_weights())]
             if type(l_rnn) != type(Input) and type(l_rnn) != Masking and type(l_rnn) != InputLayer:
@@ -168,8 +161,6 @@ def predict_contract_backtest(x_raw, x_ts, y_ts, pmodel_ffn, pmodel_rnn, discoun
     assert(N_eff==x_ts.shape[1])
 
     # are relevant input data indentical? Recall that x_ts is scaled while x_raw isn't
-    #print(x_raw[0:5,0]/age_scale)
-    #print(x_ts[0:5,0,0])
     assert((x_raw[:,0]/age_scale==x_ts[:,0,0]).all())
     assert((x_raw[:,3]==x_ts[:,0,3]).all())
   

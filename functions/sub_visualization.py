@@ -81,8 +81,8 @@ def plot_implied_survival_curve(pmodel, dav_table, dav_table2 = None, age_max = 
     
     plt.legend(loc = 'lower right', fontsize = 11)
     plt.yscale('log')
-    plt.xlabel(r'age $a_0$') #, fontsize = 'x-large')
-    plt.ylabel(r'1-year death prob.') #, fontsize = 'x-large')
+    plt.xlabel(r'age $a_0$')
+    plt.ylabel(r'1-year death prob.')
     if type(path_save) != type(None):
         plt.savefig(os.path.join(path_save, f'{baseline_tag}_implied_surv_curve.png'), dpi=400)
         plt.savefig(os.path.join(path_save, f'{baseline_tag}_implied_surv_curve.eps'), dpi=400)
@@ -156,7 +156,6 @@ def mortality_heatmap_grid(pmodel, dav_table, baseline_tag, m =1, age_max = 121,
     
     # create heatmaps
     fig, ax = plt.subplots(2,2, figsize=(12,10), sharex=True, sharey=True)
-    # cbar_ax = fig.add_axes([.91, .3, .03, .4])
 
     for i, sex in enumerate(['male', 'female']):
         for j, status in enumerate(['nonsmoker', 'smoker']):
@@ -167,13 +166,12 @@ def mortality_heatmap_grid(pmodel, dav_table, baseline_tag, m =1, age_max = 121,
                             # vmin=min_cb, vmax=max_cb,
                             # cbar_ax=None if i else cbar_ax
                             )
-            ax[i,j].set_title('{} {}'.format(sex, status)) #,fontsize = 'x-large')
+            ax[i,j].set_title('{} {}'.format(sex, status)) 
             if j == 0:
-                ax[i,j].set_ylabel(r'age $a_0$') #, fontsize = 'x-large')
+                ax[i,j].set_ylabel(r'age $a_0$')
             if i == 1:
-                ax[i,j].set_xlabel(r'$k$') #, fontsize = 'x-large')
-    fig.tight_layout()#rect=[0, 0, .9, 1])
-    # fig.suptitle(r'survival prob. $p_{x+k}$: dav_table - model_prediction')#, fontsize=20)
+                ax[i,j].set_xlabel(r'$k$')
+    fig.tight_layout()
     if type(save_path) != type(None):
         # plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_dav_vs_pred.png'))
         plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_dav_vs_pred.eps')) # no dpi=400 due to image-size
@@ -189,7 +187,6 @@ def mortality_heatmap_grid(pmodel, dav_table, baseline_tag, m =1, age_max = 121,
 
         # create heatmaps
         fig, ax = plt.subplots(2,2, figsize=(12,10), sharex=True, sharey=True)
-        # cbar_ax = fig.add_axes([.91, .3, .03, .4])
         for i, sex in enumerate(['male', 'female']):
             for j, status in enumerate(['nonsmoker', 'smoker']):
                 assert m==1, 'visualization not yet adjusted for 1/m'
@@ -200,13 +197,12 @@ def mortality_heatmap_grid(pmodel, dav_table, baseline_tag, m =1, age_max = 121,
                                 # vmin=min_cb, vmax=max_cb,
                                 # cbar_ax=None if i else cbar_ax,
                                 yticklabels= [t if t%5==0 else '' for t in np.arange(age_low, age_up+1)])
-                ax[i,j].set_title('{} {}'.format(sex, status)) #, fontsize = 'x-large')
+                ax[i,j].set_title('{} {}'.format(sex, status)) 
                 if j == 0:
-                    ax[i,j].set_ylabel(r'age $a_0$') #, fontsize = 'x-large')
+                    ax[i,j].set_ylabel(r'age $a_0$')
                 if i == 1:
-                    ax[i,j].set_xlabel(r'$k$') #, fontsize = 'x-large')
+                    ax[i,j].set_xlabel(r'$k$')
                 
-        # fig.suptitle(r'survival prob. $p_{x+m}$: dav_table - model_prediction')#, fontsize=20)
         if type(save_path) != type(None):
             fig.tight_layout()
             # plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_dav_vs_pred_zoom.png'))
@@ -214,7 +210,6 @@ def mortality_heatmap_grid(pmodel, dav_table, baseline_tag, m =1, age_max = 121,
             plt.close()
         else:
             plt.show()
-
     # return values to check whether male and female plot differ
     return val_dict, true_vals
 
@@ -235,7 +230,6 @@ def heatmap_check_homogeneity(val_dict, baseline_tag, save_path, age_range = Non
  
     # create heatmaps
     fig, ax = plt.subplots(2,2, figsize=(12,10), sharex=True, sharey=True)
-    # cbar_ax = fig.add_axes([.91, .3, .03, .4])
 
     for i, sex in enumerate(['male', 'female']):
         for j, status in enumerate(['nonsmoker', 'smoker']):
@@ -246,12 +240,12 @@ def heatmap_check_homogeneity(val_dict, baseline_tag, save_path, age_range = Non
                             # vmin=min_cb, vmax=max_cb,
                             # cbar_ax=None if i else cbar_ax
                             )
-            ax[i,j].set_title('{} {}'.format(sex, status)) #, fontsize = 'x-large')
+            ax[i,j].set_title('{} {}'.format(sex, status))
             if j == 0:
-                ax[i,j].set_ylabel(r'age $a_0$') #, fontsize = 'x-large')
+                ax[i,j].set_ylabel(r'age $a_0$')
             if i == 1:
-                ax[i,j].set_xlabel(r'$k$') #, fontsize = 'x-large')
-    fig.tight_layout()#rect=[0, 0, .9, 1])
+                ax[i,j].set_xlabel(r'$k$')
+    fig.tight_layout()
     # fig.suptitle(r'survival prob. $p_{x+k}$: dav_table - model_prediction')#, fontsize=20)
     if type(save_path) != type(None):
         # plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_dav_vs_pred.png'))
@@ -278,11 +272,11 @@ def heatmap_check_homogeneity(val_dict, baseline_tag, save_path, age_range = Non
                                 # vmin=min_cb, vmax=max_cb,
                                 # cbar_ax=None if i else cbar_ax,
                                 yticklabels= [t if t%5==0 else '' for t in np.arange(age_low, age_up+1)])
-                ax[i,j].set_title('{} {}'.format(sex, status)) #, fontsize = 'x-large')
+                ax[i,j].set_title('{} {}'.format(sex, status)) 
                 if j == 0:
-                    ax[i,j].set_ylabel(r'age $a_0$') #, fontsize = 'x-large')
+                    ax[i,j].set_ylabel(r'age $a_0$')
                 if i == 1:
-                    ax[i,j].set_xlabel(r'$k$') #, fontsize = 'x-large')
+                    ax[i,j].set_xlabel(r'$k$') 
                 
         # fig.suptitle(r'survival prob. $p_{x+m}$: dav_table - model_prediction')#, fontsize=20)
         if type(save_path) != type(None):
@@ -328,16 +322,16 @@ def mortality_heatmap_differences(val_dict, baseline_tag, save_path, age_range =
                     # cbar_ax=None if i else cbar_ax
                     )
 
-    ax[0].set_title('male non-smoker - female non smoker') #, fontsize = 'x-large')
-    ax[1].set_title('male non-smoker - male smoker') #, fontsize = 'x-large')
-    ax[2].set_title('male smoker - female smoker') #, fontsize = 'x-large')
-    ax[3].set_title('female non-smoker - female smoker') #, fontsize = 'x-large')
+    ax[0].set_title('male non-smoker - female non smoker') 
+    ax[1].set_title('male non-smoker - male smoker') 
+    ax[2].set_title('male smoker - female smoker')
+    ax[3].set_title('female non-smoker - female smoker')
     for i in range(4):
         if i in [0,2]:
-            ax[i].set_ylabel(r'age $a_0$') #, fontsize = 'x-large')
+            ax[i].set_ylabel(r'age $a_0$')
         if i in [2,3]:
-            ax[i].set_xlabel(r'$k$') #, fontsize = 'x-large')
-    fig.tight_layout()#rect=[0, 0, .9, 1])
+            ax[i].set_xlabel(r'$k$')
+    fig.tight_layout()
     # plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_delta.png'))
     plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_delta.eps')) # no dpi=400 due to image-size
     plt.close()
@@ -368,15 +362,15 @@ def mortality_heatmap_differences(val_dict, baseline_tag, save_path, age_range =
                         # vmin=min_cb, vmax=max_cb,
                         # cbar_ax=None if i else cbar_ax,
                         yticklabels= [t if t%5==0 else '' for t in np.arange(age_low, age_up+1)])
-        ax[0].set_title('male non-smoker - female non smoker') #, fontsize = 'x-large')
-        ax[1].set_title('male non-smoker - male smoker') #, fontsize = 'x-large')
-        ax[2].set_title('male smoker - female smoker') #, fontsize = 'x-large')
-        ax[3].set_title('female non-smoker - female smoker') #, fontsize = 'x-large')
+        ax[0].set_title('male non-smoker - female non smoker')
+        ax[1].set_title('male non-smoker - male smoker') 
+        ax[2].set_title('male smoker - female smoker')
+        ax[3].set_title('female non-smoker - female smoker') 
         for i in range(4):
             if i in [0,2]:
-                ax[i].set_ylabel(r'age $a_0$') #, fontsize = 'x-large')
+                ax[i].set_ylabel(r'age $a_0$') 
             if i in [2,3]:
-                ax[i].set_xlabel(r'$k$') #, fontsize = 'x-large')
+                ax[i].set_xlabel(r'$k$') 
         # plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_delta_zoom.png'))
         fig.tight_layout()
         plt.savefig(os.path.join(save_path, f'{baseline_tag}_heatmaps_delta_zoom.eps')) # no dpi=400 due to image-size
@@ -418,7 +412,6 @@ def plot_new_vs_init_loss(pmodel, pmodel_base, x, y, base_feat_in, res_feat_in, 
     plt.xlabel('no. of steps in HMC computation')
     plt.ylabel('mean loss - discounted, weighted CFs')
     plt.legend()
-    #plt.yscale('log')
     if type(path_save) != type(None):
         plt.savefig(os.path.join(path_save, 'loss_new_vs_init.png'))
         plt.close()
@@ -457,9 +450,7 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
     error = val_true-val_pred
     if error_type == 'relative':
         error = error/val_true
-        # print('... relative error computed')
-    # else:
-        # print('... absolute error computed')
+
 
     # (1-q)- and q-quantile
     q_low, q_up = np.quantile(error, 1-q), np.quantile(error, q)
@@ -468,11 +459,11 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
     plt.scatter(range(1,len(error)+1), error, marker = '+', color = 'green', alpha = 0.4)
     plt.plot([0,len(error)], [q_low,q_low], linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
     plt.plot([0,len(error)], [q_up,q_up], linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
-    plt.ylabel(error_type+' error') #, fontsize = 'x-large')
+    plt.ylabel(error_type+' error') 
     if error_type == 'relative':
         # manual rescaling of axis to have approx. same scale for both genders
         plt.ylim((min(ylim[0], np.min(error)), max(ylim[1], np.max(error))))
-    plt.xlabel('contracts') #, fontsize = 'x-large')
+    plt.xlabel('contracts')
     plt.tight_layout()
     # plot png format, as it captures the distribution implicitely via the transparency value alpha in the plot
     plt.savefig(os.path.join(path_save, f'{baseline_tag}_errors_{error_type}.png'), dpi=400)
@@ -494,7 +485,7 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
     for k, i in enumerate(features_id_lst):
         if features_id_lst[k] != 3:
             ax[k].scatter(features_data[:,0,i], error, marker= '+', color = 'green',linewidth = 1, alpha = 0.4)
-            ax[k].set_xlabel(features_str_lst[k]) #, fontsize = 'large')
+            ax[k].set_xlabel(features_str_lst[k])
             # indicate (1-q)- and q-quantile
             ax[k].plot([min(features_data[:,0,i]),max(features_data[:,0,i])], [q_low,q_low], 
                     linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
@@ -502,7 +493,7 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
                     linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
         else:
             ax[k].scatter((1/features_data[:,0,i]).astype('int'), error, marker= '+', color = 'green',linewidth = 1, alpha = 0.4)
-            ax[k].set_xlabel(features_str_lst[k]) #, fontsize = 'large')
+            ax[k].set_xlabel(features_str_lst[k]) 
             # indicate (1-q)- and q-quantile
             ax[k].plot([1,12], [q_low,q_low], 
                         linestyle = (0, (5, 10)), linewidth = 1, color = 'black')
@@ -511,7 +502,7 @@ def plot_economic_evaluation(val_true, val_pred, path_save, features_data, featu
             ax[k].set_xticks(np.unique((1/features_data[:,0,i]).astype('int')))
         
         if k%n_cols == 0:
-            ax[k].set_ylabel(error_type+' error') #, fontsize = 'large')
+            ax[k].set_ylabel(error_type+' error')
         # ax[k].set_yticks(list(ax[k].get_yticks()) + [np.round_(err_low,2), np.round_(err_up,2)])
 
     # turn off display of axis that are not used

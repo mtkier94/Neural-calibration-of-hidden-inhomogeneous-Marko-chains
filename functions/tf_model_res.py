@@ -2,7 +2,6 @@
 import numpy as np
 import time
 from copy import deepcopy, copy
-
 import tensorflow as tf
 from tensorflow.keras.layers import Dense,GRU, Input
 from tensorflow.keras.models import  Model
@@ -103,7 +102,7 @@ def combine_models(model_base, model_res, bool_masking):
         model   tf.model.Model() which combines the two input model
     '''
     # work with copies of models to avoid unintended interaction (at the cost of memory)
-    # NOTE: clone_model seems to run into layer-name-conflicts when saving the model ...
+    # Note: clone_model seems to run into layer-name-conflicts when saving the model ...
     # w_init = model_res.get_weights()
     # model_res = clone_model(model_res) # Note: layers are re-created and hence also weights reinitialized
     # model_res.set_weights(w_init)
