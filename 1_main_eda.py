@@ -2,7 +2,6 @@
 Perform Exploratory Data Analysis
 '''
 
-from turtle import color
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,17 +43,22 @@ data['Beginnjahr'] = data['Beginnjahr'] .astype('int')
 data.columns = ['year', 'month', 'payment', 'gender', 'smoker', 'age', 'n', 't', 'sum insured', 'premium']
 print(data.columns)
 
+
+# set some plotting parameters globally
+# parameters = {'axes.labelsize': 16, 'xtick.labelsize':14, 'ytick.labelsize': 14, 'legend.fontsize': 14, 'axes.titlesize': 16, 'figure.titlesize': 18}
+# plt.rcParams.update(parameters)
+
 _, ax = plt.subplots(3,3)
 ax = ax.flatten()
 ax[-1].remove()
 ax[-2].remove()
 for k, e in enumerate(['year', 'month', 'age', 'n', 't', 'sum insured', 'premium']):
     ax[k].hist(data[e], bins = 100, weights = np.zeros(N) + 1. / N, color = 'gray')#, font = 'large')
-    ax[k].set_xlabel(e, fontsize = 'large')
+    ax[k].set_xlabel(e)#, fontsize = 'large')
     if e == 'year':
         ax[k].set_xticks([2015, 2016])
     if e == 'sum insured':
-        ax[k].set_xlabel('S', fontsize = 'large')
+        ax[k].set_xlabel('S')#, fontsize = 'large')
         ax[k].set_xticks([0,5e5,1e6])
 
 # data.hist(bins=100, grid = False, weights=np.zeros(N) + 1. / N, color = 'gray')

@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+# set some plotting parameters globally
+parameters = {'axes.labelsize': 16, 'xtick.labelsize':14, 'ytick.labelsize': 14, 'legend.fontsize': 14, 'axes.titlesize': 16, 'figure.titlesize': 18}
+plt.rcParams.update(parameters)
+
+
 from sklearn.utils import shuffle
 from itertools import product as iter_prod
 from time import time
@@ -141,13 +146,14 @@ def run_main(baseline_sex, bool_train):
         plt.plot(x[k:-1:len(freqs),0]*T_MAX, model.predict(x[k:-1:len(freqs),:])[:,1], linestyle = '--', color = 'orange')
         # plt.plot(x[k:-1:len(freqs),0]*T_MAX, model.predict(x[k:-1:len(freqs),:])[:,1], linestyle = '--', color = 'green')
     plt.yscale('log')
-    plt.xlabel('age', fontsize = 'x-large')
+    plt.xlabel('age') #, fontsize = 'x-large')
 
     # create labels
     plt.plot(x[k:-1:len(freqs),0]*T_MAX, y[k:-1:len(freqs),1], linestyle = '-', color = 'black', label = r'$\mathcal{D}_{DAV}($' + baseline_sex+r')')
     plt.plot(x[k:-1:len(freqs),0]*T_MAX, model.predict(x[k:-1:len(freqs),:])[:,1], linestyle = '--', color = 'orange', label = r'$\hat{\pi}_{base}$')
-    plt.legend(fontsize = 'large')
-    plt.savefig(os.path.join(path_models_baseline_transfer, 'baseline_fit_{}.eps'.format(baseline_sex)), format = 'eps')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(path_models_baseline_transfer, 'baseline_fit_{}.eps'.format(baseline_sex)), format = 'eps', dpi = 400)
     # plt.show()
     plt.close()
     

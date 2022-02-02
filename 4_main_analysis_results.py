@@ -226,7 +226,7 @@ if __name__ == '__main__':
         
 
             # create all qualitative plots
-            # run_visual_eval(baseline_sex = gender, tuning_type= mode, path_tag=tag)
+            run_visual_eval(baseline_sex = gender, tuning_type= mode, path_tag=tag)
 
             print('\t layer widths: ' + tag)
             # perform economic backtesting
