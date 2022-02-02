@@ -192,10 +192,6 @@ def run_econom_eval(baseline_sex ='male', tuning_type = 'manual', path_tag = '')
     quantiles = np.quantile(e_rel, alphas)
     stats = pd.DataFrame(data = None, columns = alphas)
     stats.loc[baseline_sex+r' $q_\alpha$ [%]']=np.round(quantiles*100,2)
-
-
-    print(stats)
-
     stats.to_latex(os.path.join(path_model, r'{}_error_rel_stats.tex'.format(baseline_sex)))
 
     
@@ -222,7 +218,7 @@ if __name__ == '__main__':
             import warnings
             warnings.filterwarnings("ignore")
             import logging
-            logging.getLogger('matplotlib').setLevel(level=logging.CRITICAL) # supress postscript latency warnings
+            logging.getLogger('matplotlib').setLevel(level=logging.CRITICAL) # supress postscript latency warnings when saving images in an .eps-format
         
 
             # create all qualitative plots

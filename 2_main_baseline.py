@@ -2,28 +2,19 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-# set some plotting parameters globally
-parameters = {'axes.labelsize': 16, 'xtick.labelsize':14, 'ytick.labelsize': 14, 'legend.fontsize': 14, 'axes.titlesize': 16, 'figure.titlesize': 18}
-plt.rcParams.update(parameters)
-
-
 from sklearn.utils import shuffle
-from itertools import product as iter_prod
-from time import time
-
 import tensorflow as tf
-from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.layers import Dense, Input
-from tensorboard.plugins.hparams import api as hp # hyperparameter-tuning
+from tensorflow.keras.models import load_model
 
 from functions.sub_data_prep import create_trainingdata_baseline
 from functions.tf_model_base import create_baseline_model_ffn, create_baseline_model_rnn, transfer_weights_dense2simpleRNN
 from functions.sub_backtesting import check_if_rnn_version
-
 from global_vars import T_MAX # max age in baseline survival table; used for scaling
-
 from global_vars import path_models_baseline_transfer, path_data
 
+# Optional: global plotting parameters
+# parameters = {'axes.labelsize': 16, 'xtick.labelsize':14, 'ytick.labelsize': 14, 'legend.fontsize': 14, 'axes.titlesize': 16, 'figure.titlesize': 18}
+# plt.rcParams.update(parameters)
 
 def lr_schedule(epoch, lr):
         '''
@@ -42,7 +33,11 @@ def ES():
 
 
 
-def run_main(baseline_sex, bool_train):
+def run_main(baseline_sex, bool_train, bool_plot = False):
+    '''
+    Load (or train; currently disabled due to safety reasons) baseline model.
+    Perform various visual analysis of the model, e.g of the training behaviour and the final fit
+    '''
 
     callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule), ES()]
     p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
@@ -119,7 +114,7 @@ def run_main(baseline_sex, bool_train):
         print(model.evaluate(x,y, batch_size=1024, verbose = 0))
 
     # visualize training process of FNN-model
-    if False:
+    if bool_plot:
         _, ax = plt.subplots(1,2,figsize=(10,4))
         if type(history) == type({}):
             ax[0].plot(history['loss'])
@@ -157,7 +152,7 @@ def run_main(baseline_sex, bool_train):
     # plt.show()
     plt.close()
     
-    if False:
+    if bool_plot:
         # visualize fit of FFN and RNN vs baseline-DAV-table
         plt.plot(x[:,0]*T_MAX, model.predict(x)[:,0], 'xg', alpha = .5, label='ffn')
         plt.plot(x[:,0]*T_MAX, model_rnn.predict(x.reshape(1,-1,n_in))[0,:,0].flatten(), 'ob', alpha = .2, label='rnn')
@@ -176,8 +171,6 @@ def run_main(baseline_sex, bool_train):
 if __name__ == '__main__':
 
     bool_train = False
-    # baseline_sex = 'male'
 
-    for baseline_sex in ['male', 'female']: #, 'female']:
-
+    for baseline_sex in ['male', 'female']:
         run_main(baseline_sex, bool_train)
