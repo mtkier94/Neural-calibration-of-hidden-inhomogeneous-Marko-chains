@@ -1,5 +1,6 @@
 # Neural calibration of hidden inhomogeneous Marko chains -- Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C.
+The data is provided by msg life europe gmbh, see the MIT-license.
 
 
 ## Description of python-scripts
@@ -12,15 +13,19 @@ These steps include:
   - Configuration of the residual model <br/>
         * Option a): manual hp-tuning (3a_main_hp_manual.py)<br/>
         * Option b): automated hp-tuning: (3b_main_hyperopt.py)<br/>
-  - Analyze results, create heatmaps for policyholder-/ risk-types, intrinsic model validation (4_main_analysis_results.py)
+  - Analyze results, create heatmaps for policyholder-/ risk-types, intrinsic model validation (4_main_analysis_results.py) <br/>
+        * Note: If models from manual hp-tuning are to be analyzed, the respective model needs to be renamed to 'model_best.h5' and the path has to be set accordingly, i.e. currently for the five hidden layers we access the sub-directory './models/resnet/hp_search_[gender]_50_50_50_50_50'.
   
 General information in "global_vars.py" includes
   - Paths for saving/ loading data
   - Hyperparameters such as cost structur and discount rate  (for cash flows)
 
 
-## Comments on the data
-tba
+## Comments on the data (see ./data)
+
+The raw data is contained in 'Tarifierung_RI_2017.csv'. All other data is derived from the raw data by data processing.
+
+Note: train- and test-data ('[x/y]_[train/test].npy') are not uploaded due to size-contrainsts (>100MB) induced by the time-series-format. However, running "0_main_data_processing.py" will create these files.
   
 
 ## Description of the folder structure:
