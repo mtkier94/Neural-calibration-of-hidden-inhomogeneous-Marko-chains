@@ -1,7 +1,8 @@
 import os
 
 path_project = os.path.dirname(os.path.realpath(__file__))
-path_data = os.path.join(path_project, 'data')
+path_data = os.path.join(os.path.join(path_project, 'data'), 'msg_life_data')
+path_dav = os.path.join(os.path.join(path_project, 'data'), 'DAV_tables')
 path_data_backtesting = os.path.join(path_data, 'backtesting')
 
 path_hyperopt = os.path.join(path_project, 'models_hyperopt')

@@ -10,7 +10,7 @@ from functions.sub_data_prep import create_trainingdata_baseline
 from functions.tf_model_base import create_baseline_model_ffn, create_baseline_model_rnn, transfer_weights_dense2simpleRNN
 from functions.sub_backtesting import check_if_rnn_version
 from global_vars import T_MAX # max age in baseline survival table; used for scaling
-from global_vars import path_models_baseline_transfer, path_data
+from global_vars import path_models_baseline_transfer, path_dav
 
 # Optional: global plotting parameters
 # parameters = {'axes.labelsize': 16, 'xtick.labelsize':14, 'ytick.labelsize': 14, 'legend.fontsize': 14, 'axes.titlesize': 16, 'figure.titlesize': 18}
@@ -40,14 +40,14 @@ def run_main(baseline_sex, bool_train, bool_plot = False):
     '''
 
     callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule), ES()]
-    p_survive = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive = pd.read_csv(os.path.join(path_dav,r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
     assert(T_MAX==len(p_survive)-1) # table starts at age 0
 
     if baseline_sex == 'female':
-        p_other_sex = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format('male')),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
+        p_other_sex = pd.read_csv(os.path.join(path_dav,r'DAV2008T{}.csv'.format('male')),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
         tag_other_sex = 'DAVT2008male'
     elif baseline_sex == 'male':
-        p_other_sex = pd.read_csv(os.path.join(path_data,r'DAV2008T{}.csv'.format('female')),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
+        p_other_sex = pd.read_csv(os.path.join(path_dav,r'DAV2008T{}.csv'.format('female')),  delimiter = ';', header=None ).loc[:,0].values.reshape((-1,1))
         tag_other_sex = 'DAVT2008female'
     else:
         raise ValueError('Unknown baseline_sex')

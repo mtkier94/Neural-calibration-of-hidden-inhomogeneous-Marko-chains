@@ -11,7 +11,7 @@ from functions.sub_backtesting import check_exploded_gradients
 from functions.sub_actuarial import neural_premium_zillmerisation
 
 from global_vars import T_MAX, AGE_RANGE, INIT_AGE_RANGE, ALPHA, BETA, GAMMA
-from global_vars import path_data, path_hyperopt_male, path_hyperopt_female
+from global_vars import path_data, path_dav, path_hyperopt_male, path_hyperopt_female
 from global_vars import path_models_resnet_hpsearch_male, path_models_resnet_hpsearch_female, path_models_resnet_hpsearch_none
 
 def run_visual_eval(baseline_sex = 'female', tuning_type = 'manual', path_tag = ''):
@@ -61,10 +61,14 @@ def run_visual_eval(baseline_sex = 'female', tuning_type = 'manual', path_tag = 
         
 
     # look at one individual model and visualize progress
-    pmodel = load_model(os.path.join(path_model, r'model_best.h5'), compile=False)
+    try:
+        pmodel = load_model(os.path.join(path_model, r'model_best.h5'), compile=False)
+    except:
+        print('"model_best.h5" seems not to exist. Potentially, it has to manually be created first be copying and renaming the model of choice, which was found during HPTuning.')
+        raise ValueError('Loading model_best.h5 failed. Path reference: ' +str(os.path.join(path_model, r'model_best.h5')))
     pmodel.compile(loss = compute_loss_mae, metrics=['mae'], optimizer = 'adam') # as we don't train anymore, specifics of the optimizer are irrelevant
-    p_survive = pd.read_csv(os.path.join(path_data, r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
-    p_survive2 = pd.read_csv(os.path.join(path_data, r'DAV2008T{}.csv'.format(sex2)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive = pd.read_csv(os.path.join(path_dav, r'DAV2008T{}.csv'.format(baseline_sex)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
+    p_survive2 = pd.read_csv(os.path.join(path_dav, r'DAV2008T{}.csv'.format(sex2)),  delimiter=';', header=None ).loc[:,0].values.reshape((-1,1))
 
 
     bool_grad = check_exploded_gradients(pmodel)
