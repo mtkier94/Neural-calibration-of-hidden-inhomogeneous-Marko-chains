@@ -1,6 +1,6 @@
 # Neural calibration of hidden inhomogeneous Marko chains -- Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C. <br/>
-The data is provided by msg life europe gmbh, see the MIT-license.<br/>
+The data is provided by msg life central europe gmbh, see the MIT-license.<br/>
 
 
 ## Description of python-scripts
@@ -23,9 +23,17 @@ General information in "global_vars.py" includes<br/>
 
 ## Comments on the data (see ./data)
 
-The raw data is contained in 'Tarifierung_RI_2017.csv'. All other data is derived from the raw data by data processing.<br/>
+
+1) Origin of the raw data of term life insurance contracts: msg life central europe gmbh <br/>
+
+2) The raw data is contained in 'Tarifierung_RI_2017.csv'. All other data is derived from the raw data by data processing.<br/>
 
 Note: train- and test-data ('[x/y]_[train/test].npy') are not uploaded due to size-contrainsts (>100MB) induced by the time-series-format. However, running "0_main_data_processing.py" will create these files.
+
+3) We do not include the .csv-files for the DAV 2008T tables (male or female) in this repository, due to copyright.<br/>
+However, the data is available at the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf <br/>
+Alternatively, one may consider the R package "mortality-tables" to retrieve the data, see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx <br/>
+
   
 
 ## Description of the folder structure:
