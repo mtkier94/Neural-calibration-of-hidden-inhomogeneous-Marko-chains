@@ -1,6 +1,6 @@
 # Neural calibration of hidden inhomogeneous Marko chains -- Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C. <br/>
-The data is provided by msg life central europe gmbh, see the MIT-license in .<br/>
+The data is provided by msg life central europe gmbh.<br/>
 
 
 ## Description of python-scripts
