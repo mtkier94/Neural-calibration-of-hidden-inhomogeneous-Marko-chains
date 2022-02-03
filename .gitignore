@@ -10,8 +10,15 @@ data/msg_life/y_test.npy
 # We do not have the copyright to share DAV tables
 # However, the data is available at the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf 
 # Alternatively, one may consider the R package "mortality-tables" to retrieve the data, see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx 
-<<<<<<< HEAD
+
 data/DAV_tables/
-=======
-data/DAV_tables/
->>>>>>> 2acd62e79b27768e91d1f4e673ab0866287b5fdf
+
+
+
+
+data/x_test.npy
+data/x_test_raw.npy
+data/x_train.npy
+data/x_train_raw.npy
+data/y_train.npy
+data/y_test.npy
