@@ -1,0 +1,17 @@
+# Exclude specific files due to github size-contraints (<= 100 MB)
+# Note: Given the source-data "Tarifierung_RI_2017.csv", the files listed below can be obtained by simply running the file "0_main_data_processing.py" and, implicitly, the helper-functions included in this script 
+data/msg_life/x_test.npy
+data/msg_life/x_test_raw.npy
+data/msg_life/x_train.npy
+data/msg_life/x_train_raw.npy
+data/msg_life/y_train.npy
+data/msg_life/y_test.npy
+
+# We do not have the copyright to share DAV tables
+# However, the data is available at the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf 
+# Alternatively, one may consider the R package "mortality-tables" to retrieve the data, see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx 
+<<<<<<< HEAD
+data/DAV_tables/
+=======
+data/DAV_tables/
+>>>>>>> 2acd62e79b27768e91d1f4e673ab0866287b5fdf
