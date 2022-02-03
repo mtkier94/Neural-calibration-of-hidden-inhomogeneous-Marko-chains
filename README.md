@@ -1,6 +1,6 @@
 # Neural calibration of hidden inhomogeneous Marko chains -- Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C. <br/>
-The data is provided by msg life central europe gmbh. The copyright remains with msg life central europe gmbh, see LICENSE in './data/msg_life/'<br/>
+The data is provided by msg life central europe gmbh. <br/>
 
 
 ## Description of python-scripts
@@ -24,7 +24,7 @@ General information in "global_vars.py" includes <br/>
 ## Comments on the data (see ./data)
 
 
-1) The raw data is provided by msg life central europe gmbh and can be found in './data/msg_life/Tarifierung_RI_2017.csv'. All other data in './data/msg_life/" is derived from the raw data by data processing. <br/>
+1) The raw data is provided by msg life central europe gmbh and can be found in './data/msg_life/Tarifierung_RI_2017.csv'. All other data in './data/msg_life/" is derived from the raw data by data processing. The copyright for this data remains with msg life central europe gmbh, see LICENSE in './data/msg_life/' <br/>
 
 2) Note: train- and test-data ('[x/y]_[train/test]*.npy') are not uploaded to './data/msg_life/' due to size-contraints (>100MB) on github induced by the time-series-format. However, running "0_main_data_processing.py" will create these files.
 
