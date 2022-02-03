@@ -1,0 +1,5 @@
+We do not provide the DAV-tables as .csv-data, due to a lack of Copyright.
+However, the data is publicly available.
+
+1) The original table can be found on the DAV website www.aktuar.de, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf)
+2) The data can also be extracted using the R package "mortality-tables", see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx . For questions about the copyright, we refer to the owner of the respective repository.
