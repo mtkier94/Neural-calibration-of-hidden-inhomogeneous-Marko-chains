@@ -1,37 +1,35 @@
 # Neural calibration of hidden inhomogeneous Marko chains -- Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C. <br/>
-The data is provided by msg life central europe gmbh, see the MIT-license.<br/>
+The data is provided by msg life central europe gmbh, see the MIT-license in .<br/>
 
 
 ## Description of python-scripts
 Given the application of transfer learning/ pre-training, this project contains multiple main-files to be run step-by-step. The order the files are to be run in is indicated by the leading number of the python files. <br/>
 
 These steps include:
-  - Data generation and preprocessing (0_main_data_processing.py)<br/>
+  - Data generation and preprocessing (0_main_data_processing.py) <br/>
   - Exploratory data analysis (1_main_eda.py)
-  - Configuration of the baseline model ( 2_main_baseline.py )<br/>
+  - Configuration of the baseline model (2_main_baseline.py)<br/>
   - Configuration of the residual model <br/>
         * Option a): manual hp-tuning (3a_main_hp_manual.py)<br/>
         * Option b): automated hp-tuning: (3b_main_hyperopt.py)<br/>
   - Analyze results, create heatmaps for policyholder-/ risk-types, intrinsic model validation (4_main_analysis_results.py) <br/>
         * Note: If models from manual hp-tuning are to be analyzed, the respective model needs to be renamed to 'model_best.h5' and the path has to be set accordingly, i.e. currently for the five hidden layers we access the sub-directory './models/resnet/hp_search_[gender]_50_50_50_50_50'.<br/>
   
-General information in "global_vars.py" includes<br/>
+General information in "global_vars.py" includes <br/>
   - Paths for saving/ loading data<br/>
-  - Hyperparameters such as cost structur and discount rate  (for cash flows)<br/>
+  - Hyperparameters such as cost structur and discount rate  (for cash flows) <br/>
 
 
 ## Comments on the data (see ./data)
 
 
-1) Origin of the raw data of term life insurance contracts: msg life central europe gmbh <br/>
+1) The raw data is provided by msg life central europe gmbh and can be found in './data/msg_life/Tarifierung_RI_2017.csv'. All other data in './data/msg_life/" is derived from the raw data by data processing. <br/>
 
-2) The raw data is contained in 'Tarifierung_RI_2017.csv'. All other data is derived from the raw data by data processing.<br/>
+2) Note: train- and test-data ('[x/y]_[train/test]*.npy') are not uploaded to './data/msg_life/' due to size-contraints (>100MB) on github induced by the time-series-format. However, running "0_main_data_processing.py" will create these files.
 
-Note: train- and test-data ('[x/y]_[train/test].npy') are not uploaded due to size-contrainsts (>100MB) induced by the time-series-format. However, running "0_main_data_processing.py" will create these files.
-
-3) We do not include the .csv-files for the DAV 2008T tables (male or female) in this repository, due to copyright.<br/>
-However, the data is available at the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf <br/>
+3) We do not include the .csv-files for the DAV 2008T tables (male or female) in this repository in './data/DAV_tables', as we do not own copyright for it.<br/>
+However, the data is available on the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf <br/>
 Alternatively, one may consider the R package "mortality-tables" to retrieve the data, see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx <br/>
 
   
