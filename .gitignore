@@ -14,3 +14,6 @@ data/msg_life/y_test.npy
 data/DAV_tables/DAV2008T.csv
 data/DAV_tables/DAV2008Tmale.csv
 data/DAV_tables/DAV2008Tfemale.csv
+
+# exclude .eps files
+.eps
