@@ -6,6 +6,7 @@ data/msg_life/x_train.npy
 data/msg_life/x_train_raw.npy
 data/msg_life/y_train.npy
 data/msg_life/y_test.npy
+data/
 functions/.ipynb_checkpoints/
 functions/__pycache__/
 
