@@ -6,6 +6,8 @@ data/msg_life/x_train.npy
 data/msg_life/x_train_raw.npy
 data/msg_life/y_train.npy
 data/msg_life/y_test.npy
+functions/.ipynb_checkpoints/
+functions/__pycache__/
 
 # We do not have the copyright to share DAV tables
 # However, the data is available at the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf 
