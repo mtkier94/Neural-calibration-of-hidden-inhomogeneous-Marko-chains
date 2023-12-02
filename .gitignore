@@ -19,7 +19,7 @@ functions/__pycache__/
 #data/DAV_tables/DAV2008Tfemale.csv
 
 # exclude file types
-.eps
-.png
-.tex
-.npy
+*.eps
+*.png
+*.tex
+*.npy
