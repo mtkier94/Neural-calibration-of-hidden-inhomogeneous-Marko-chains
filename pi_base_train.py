@@ -94,7 +94,7 @@ def run_main(baseline_sex, bool_train, bool_plot = False):
 
         # transfer weights to rnn-type model (for later use)
         # sequential character benefitial to non-Markovian HMC-objective
-        model_rnn = create_baseline_model_rnn(input_shape=(None, n_in), n_out= n_out, hidden_layers=[40,40,20])
+        model_rnn = create_baseline_model_rnn(input_shape=(None, n_in), n_out= n_out, hidden_layers=WIDTHS)
         transfer_weights_dense2simpleRNN(dense_model= model, rnn_model = model_rnn)
         model_rnn.save(os.path.join(path_models_baseline_transfer, r'rnn_davT{}.h5'.format(baseline_sex)))    
         print('Weights transferred from ffn to rnn!')
