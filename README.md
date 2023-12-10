@@ -1,22 +1,29 @@
 # Neural calibration of hidden inhomogeneous Marko chains -- Information decompression in life insurance
 Code and data accompanying the corresponding paper by Kiermayer, M. and Weiß, C. <br/>
 The data is provided by msg life central europe gmbh. <br/>
+Code was tested for python3.8(.16) and tensorflow==2.7.0, see requirements.txt for more detail. <br/>
 
 
 ## Description of python-scripts
-Given the application of transfer learning/ pre-training, this project contains multiple main-files to be run step-by-step. The order the files are to be run in is indicated by the leading number of the python files. <br/>
+The project contains multiple main-files to be run step-by-step. This is inevidible given the application of transfer learning/ pre-training. <br/>
 
-These steps include:
-  - Data generation and preprocessing (0_main_data_processing.py) <br/>
-  - Exploratory data analysis (1_main_eda.py)
-  - Configuration of the baseline model (2_main_baseline.py)<br/>
-  - Configuration of the residual model <br/>
-        * Option a): manual hp-tuning (3a_main_hp_manual.py)<br/>
-        * Option b): automated hp-tuning: (3b_main_hyperopt.py)<br/>
-  - Analyze results, create heatmaps for policyholder-/ risk-types, intrinsic model validation (4_main_analysis_results.py) <br/>
-        * Note: If models from manual hp-tuning are to be analyzed, the respective model needs to be renamed to "model_best.h5" and the path has to be set accordingly, i.e. currently for the five hidden layers we access the sub-directory "./models/resnet/hp_search_[gender]_50_50_50_50_50".<br/>
+The fastest way to replicate results is: <br/>
+- run create_data.py to locally create train, test and crossvalidation data <br/>
+- run model_evaluation.py to obtain the numerical results (section 5 of the paper)  <br/>
+- [optional] run ablation_study_crossval.py to perform a 2-fold crossvalidation (Appendix A.1 of the paper) <br/>
+
+This fast-track approach will re-use all provided checkpoints for pi_base and pi_res (for both gender baselines). <br/>
+
+Alternatively, to replicate all steps or adjust the model to your custom datset (of term life contracts):  <br/>
+- run create_data.py to locally create train, test and crossvalidation data <br/>
+- run pi_base_train.py to train a new baseline model pi_base. Note that after re-training pi_base, the model pi_res must be re-trained as well due to their inter-dependency. <br/>
+      * The repository contains multiple checkpoints for both gender baselines, see e.g. ./models/baseline/hp_search_male . To run a hyperparam search for pi_base, enable training in line 173 (val 'bool_train') and adjust hyperparams in lines 69-73. <br/>
+- run pi_res_train_hptuning_hyperopt.py and/ or pi_res_train_hptuning_manual.py to perform a hyperparameter search for pi_res. <br/>
+- run model_evaluation.py to obtain the numerical results (section 5 of the paper)  <br/>
+- [optional] run ablation_study_crossval.py to perform a 2-fold crossvalidation (Appendix A.1 of the paper) <br/>
+      * Note: If models from manual hp-tuning are to be analyzed, the respective model needs to be renamed to "model_best.h5" and the path has to be set accordingly, i.e. currently for the five hidden layers we access the sub-directory "./models/resnet/hp_search_[gender]_50_50_50_50_50".<br/>
   
-General information in "global_vars.py" includes <br/>
+The file "global_vars.py" contains general information which includes <br/>
   - Paths for saving/ loading data<br/>
   - Hyperparameters such as cost structur and discount rate  (for cash flows) <br/>
 
@@ -26,11 +33,9 @@ General information in "global_vars.py" includes <br/>
 
 1) The raw data is provided by msg life central europe gmbh and can be found in "./data/msg_life/Tarifierung_RI_2017.csv". All other data in "./data/msg_life/" is derived from the raw data by data processing. The copyright for this data remains with msg life central europe gmbh, see LICENSE in "./data/msg_life/" <br/>
 
-2) Note: train- and test-data ("[x/y]_[train/test]*.npy") are not uploaded to './data/msg_life/' due to size-contraints (>100MB) on github induced by the time-series-format. However, running "0_main_data_processing.py" will create these files.
+2) Note: train- and test-data ("[x/y]_[train/test]*.npy") are not uploaded to './data/msg_life/' due to size-contraints (>100MB) on github induced by the time-series-format. However, running "create_data.py" will create all files required for training and/or evaluation.
 
-3) We do not include the .csv-files for the DAV 2008T tables (male or female) in this repository in "./data/DAV_tables", as we do not own copyright for it.<br/>
-However, the data is available on the website http://www.aktuar.de/, see https://aktuar.de/unsere-themen/lebensversicherung/sterbetafeln/2018-10-05_DAV-Richtlinie_Herleitung_DAV2008T.pdf <br/>
-Alternatively, one may consider the R package "mortality-tables" to retrieve the data, see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx <br/>
+3) The .csv-files for the DAV 2008T tables (male or female) at "./data/DAV_tables" are obtained via the R package "mortality-tables", see https://gitlab.open-tools.net/R/r-mortality-tables/-/blob/master/data-raw/Germany_Endowments_DAV-T.xlsx <br/>
 
   
 
