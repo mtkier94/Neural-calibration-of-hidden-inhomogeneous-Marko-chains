@@ -7,6 +7,7 @@ Code was tested for python3.8(.16) and tensorflow==2.7.0, see requirements.txt f
 ## Description of python-scripts
 The project contains multiple main-files to be run step-by-step. This is inevidible given the application of transfer learning/ pre-training. <br/>
 
+### Fast-track
 The fastest way to replicate results is: <br/>
 - run create_data.py to locally create train, test and crossvalidation data <br/>
 - run model_evaluation.py to obtain the numerical results (section 5 of the paper)  <br/>
@@ -14,14 +15,15 @@ The fastest way to replicate results is: <br/>
 
 This fast-track approach will re-use all provided checkpoints for pi_base and pi_res (for both gender baselines). <br/>
 
+### End-to-end replication
 Alternatively, to replicate all steps or adjust the model to your custom datset (of term life contracts):  <br/>
 - run create_data.py to locally create train, test and crossvalidation data <br/>
 - run pi_base_train.py to train a new baseline model pi_base. Note that after re-training pi_base, the model pi_res must be re-trained as well due to their inter-dependency. <br/>
       * The repository contains multiple checkpoints for both gender baselines, see e.g. ./models/baseline/hp_search_male . To run a hyperparam search for pi_base, enable training in line 173 (val 'bool_train') and adjust hyperparams in lines 69-73. <br/>
 - run pi_res_train_hptuning_hyperopt.py and/ or pi_res_train_hptuning_manual.py to perform a hyperparameter search for pi_res. <br/>
 - run model_evaluation.py to obtain the numerical results (section 5 of the paper)  <br/>
+     * Note: If models from manual hp-tuning are to be analyzed, the respective model needs to be renamed to "model_best.h5" and the path has to be set accordingly, i.e. currently for the five hidden layers we access the sub-directory "./models/resnet/hp_search_[gender]_50_50_50_50_50".<br/>
 - [optional] run ablation_study_crossval.py to perform a 2-fold crossvalidation (Appendix A.1 of the paper) <br/>
-      * Note: If models from manual hp-tuning are to be analyzed, the respective model needs to be renamed to "model_best.h5" and the path has to be set accordingly, i.e. currently for the five hidden layers we access the sub-directory "./models/resnet/hp_search_[gender]_50_50_50_50_50".<br/>
   
 The file "global_vars.py" contains general information which includes <br/>
   - Paths for saving/ loading data<br/>
