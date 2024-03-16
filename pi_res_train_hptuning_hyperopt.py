@@ -1,4 +1,4 @@
-from functions.sub_hyperopt import hpsearch_model
+import argparse
 import numpy as np
 import pickle 
 import os, time, joblib
@@ -10,8 +10,7 @@ from tensorflow.keras.optimizers import Adam
 from hyperopt import fmin, tpe, STATUS_OK, Trials, space_eval
 from hyperopt.plotting import main_plot_history
 
-
-
+from functions.sub_hyperopt import hpsearch_model
 from functions.tf_loss_custom import compute_loss_mae
 from functions.sub_hyperopt import hpsearch_model, get_search_space
 from global_vars import path_data, path_models_baseline_transfer, path_hyperopt_female, path_hyperopt_male
@@ -75,7 +74,7 @@ def run_main(baseline_sex = 'female', eval_nums = 32, bool_train = False, bool_f
         all potential outputs, such as ANN_models (.h5-data), histories or the hyperopt object are saved automatically.
     '''
 
-    EPOCHS = 2#1500
+    EPOCHS = 1500
     tf_strategy = tf.distribute.MirroredStrategy()
     N_GPUs = tf_strategy.num_replicas_in_sync
 
@@ -131,8 +130,7 @@ def run_main(baseline_sex = 'female', eval_nums = 32, bool_train = False, bool_f
         except Exception as e:
             print('tf.data.Dataset approach aboarded.')
             raise ValueError(e)
-            # exit()
-            # history = pmodel.fit(x = [x_train[:,:,base_features], x_train[:,:, res_features]], y = y_train, batch_size= params['batch_size']*N_GPUs, epochs = EPOCHS, callbacks = [LearningRateScheduler(exp_decay_scheduler), ES()], verbose = 2)
+
         print('\t one round of fitting completed!')
         loss = compute_loss_mae(y_true = y_train, y_pred = pmodel.predict(x=[x_train[:,:,base_features], x_train[:,:, res_features]]))
         print('loss (via pmodel.predict): ', loss)
@@ -217,13 +215,12 @@ def run_main(baseline_sex = 'female', eval_nums = 32, bool_train = False, bool_f
         params = trials.best_trial['misc']['vals']
         for hps in params.keys():
             params[hps] = params[hps][0] # remove list format from hparam
+        
+        print(f'Best model config with hyperopt for {baseline_sex} baseline.')
         print(space_eval(search_space, params))
 
-        # exit()
         main_plot_history(trials)
 
-
-        # exit()
         # display history of all trials
         for i in range(eval_nums):
             hist = pickle.load( open( os.path.join(path_model, r'model_trial_hist_{}.pkl'.format(i)), "rb" ) ) 
@@ -231,16 +228,38 @@ def run_main(baseline_sex = 'female', eval_nums = 32, bool_train = False, bool_f
             plt.yscale('log')
         plt.show()
 
-
-
         
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(
+        description="Input args for hyperopt HPTuning"
+    )
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=16,
+        help="Number of (new) evaluations hyperopt will perform. Previous evaluations will be loaded and considered.",
+    )
+    parser.add_argument(
+        "--training_flag",
+        type=bool,
+        default=False,
+        help="Indicate if new models should be trained. Default False to avoid overwriting model configs.",
+    )
+    parser.add_argument(
+        "--finetuning_flag",
+        type=bool,
+        default=False,
+        help="If True, finetune the currently best model and save it.",
+    )
+    args = parser.parse_args()
+    
     #--------------------------
     # settings
-    n = 16
-    training_flag = False
-    finetuning_flag = False
+    n = args.n
+    training_flag = args.training_flag
+    finetuning_flag = args.finetuning_flag
+    
     #--------------------------
 
     for gender in ['female', 'male']:

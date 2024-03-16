@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import pickle 
 import os, time
@@ -38,8 +39,8 @@ def ES():
 
 def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train = False, LR_RATES = [1e-2,5e-3, 1e-3], HP_BZ = [32, 64, 128]):
 
-    
     EPOCHS = 1000
+    print(f'Starting manual HPTuning of model with layer-withs {widths_lst} on a grid of learning rates {LR_RATES} and batch sizes {HP_BZ} for {EPOCHS} epochs. Training with kfold crossvalidation of {kfolds} folds (where 1 folds means no crossvalidation).')
 
     for cv_kfold in range(kfolds):
         kfold_tag = '' if kfolds==1 else f'_cv_{cv_kfold}' # enable cross validation study but keep code backwards compatible for w/o cv, i.e. kfolds=1
@@ -50,12 +51,14 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
         # ALternative: For numeric stability, set the default floating-point dtype to float64
         #tf.keras.backend.set_floatx('float64')
     
+        width_tag = '_'+'_'.join([str(x) for x in widths_lst])
+    
         if baseline_sex == 'male':
-            path_model = path_models_resnet_hpsearch_male
+            path_model = path_models_resnet_hpsearch_male+width_tag
         elif baseline_sex == 'female':
-            path_model = path_models_resnet_hpsearch_female
+            path_model = path_models_resnet_hpsearch_female+width_tag
         elif baseline_sex == 'none':
-            path_model = path_models_resnet_hpsearch_none
+            path_model = path_models_resnet_hpsearch_none+width_tag
         else:
             raise ValueError('Unknown Option for baseline_sex.')
         strategy = tf.distribute.MirroredStrategy()
@@ -151,7 +154,7 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
                     elif os.path.exists(os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag))):
                         pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}{}.h5'.format(lrate, hp_batchsize, kfold_tag)), compile=False)
                         pmodel.compile(loss = compute_loss_mae, metrics=None, optimizer = optimizer)
-                        print(' ... Model with lr {}, bz {} and kfolds {} loaded.'.format(lrate, hp_batchsize, kfolds))
+                        print(' ... Model ({}) with lr {}, bz {} and kfolds {} loaded.'.format(baseline_sex, lrate, hp_batchsize, kfolds))
     
                         with open(os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag)), 'rb') as f:
                             history = np.load(f, allow_pickle=True)
@@ -162,6 +165,9 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
                             print('Model with nan-paramter-values! ', r'model_lr_{}_bz_{}{}.h5'.format(lrate, hp_batchsize, kfold_tag))
                     else:
                         print('train-flag is off and model with lr {}, bz {} and kfolds {} not yet trained.'.format(lrate, hp_batchsize, kfolds))
+                        cache = os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag))
+                        print(f'Expected file path {cache} empty.')
+                        return
                         
                     # plot training history
                     if baseline_sex != 'none':
@@ -298,24 +304,50 @@ def run_finetuning(baseline_sex, batchsize = 128, lr = 10**-4, epochs = 1000):
 
 if __name__ ==  '__main__':
 
+    
+    parser = argparse.ArgumentParser(
+        description="Input args for hyperopt HPTuning"
+    )
+    parser.add_argument(
+        "--layer_widths",
+        type=list,
+        default=[50, 50, 50, 50, 50],
+        help="List with widths of the dense layers in pi_res architecture.",
+    )
+    parser.add_argument(
+        "--training_flag",
+        type=bool,
+        default=False,
+        help="Indicate if new models should be trained. Default False to avoid overwriting model configs.",
+    )
+    parser.add_argument(
+        "--finetuning_flag",
+        type=bool,
+        default=False,
+        help="If True, finetune the currently best model and save it.",
+    )
+    args = parser.parse_args()
     #----------------------
-    # settings
-    flag_training = False
-    flag_finetuning = True
-    widths = [50, 50, 50, 50, 50]
+    # settings: 
+    flag_training = args.training_flag
+    flag_finetuning = args.finetuning_flag
+    widths = args.layer_widths
     #----------------------
 
     assert (flag_training != True) or (flag_finetuning != True), 'either train new models or fine-tune existing' # either train new models or fine-tune existing
+    
+    print(flag_training, flag_finetuning, widths)
 
     for gender in ['female', 'male']:
         if not flag_finetuning:
             run_manual_HPS(baseline_sex=gender, bool_train=flag_training, widths_lst = widths)
-        else:
+            
+        if flag_finetuning:
             # optional: finetuning
             # note: model_best.h5 has to be manually selected before this can be run
             # motivation for non-automated selection: human expertise to evaluate trade-off between variance and bias
             try:
                 run_finetuning(gender)
             except Exception as e:
-                print('model_best.h5 might not be available yet. Error: ')
+                print('model_best.h5 might not be available yet as it has to be set manually, selected from a list models created during HParam-tuning. Error: ')
                 print(e)
