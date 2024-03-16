@@ -299,6 +299,14 @@ def mortality_heatmap_differences(val_dict, baseline_tag, save_path, age_range =
     # -> intrinsic economic evaluation superior
 
     fig, ax = plt.subplots(2,2, figsize=(12,10), sharex=True, sharey=True)
+    
+    
+    # compute differences between gender-smoker combinations
+    hm_values = {}
+    hm_values[0] = val_dict['male']['nonsmoker'] -val_dict['female']['nonsmoker']
+    hm_values[1] = val_dict['male']['nonsmoker'] -val_dict['male']['smoker']
+    hm_values[2] = val_dict['male']['smoker'] -val_dict['female']['smoker']
+    hm_values[3] = val_dict['female']['nonsmoker'] -val_dict['female']['smoker']
 
     ax = ax.flatten()
     for i in range(4):      
