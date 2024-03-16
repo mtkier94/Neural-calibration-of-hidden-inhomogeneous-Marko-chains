@@ -26,7 +26,7 @@ def run_main(mode = 'train', kfolds=2):
     '''
 
     assert mode in ['train', 'test'] # sanity-check for user input
-    assert kfold==2, 'only 2fold crossvalidation implemented atm'
+    assert kfolds==2, 'only 2fold crossvalidation implemented atm'
 
     #### load original data for processing
     data = pd.read_csv(os.path.join(path_data,r'Tarifierung_RI_2017.csv'),  delimiter=';'  )
