@@ -5,6 +5,7 @@ certifi==2023.7.22
 charset-normalizer==3.3.0
 clang==5.0
 cycler==0.12.1
+dill==0.3.8
 flatbuffers==1.12
 gast==0.4.0
 google-auth==2.23.3
@@ -12,6 +13,7 @@ google-auth-oauthlib==0.4.6
 google-pasta==0.2.0
 grpcio==1.59.0
 h5py==3.1.0
+hyperopt==0.2.7
 idna==3.4
 importlib-metadata==6.8.0
 Jinja2==3.1.2
