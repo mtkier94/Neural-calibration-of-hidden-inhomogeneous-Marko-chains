@@ -87,6 +87,7 @@ def run_visual_eval(baseline_sex = 'female', tuning_type = 'manual', path_tag = 
     heatmap_check_homogeneity(val_dict, baseline_tag= baseline_sex, save_path=path_model, age_range=INIT_AGE_RANGE)
     mortality_heatmap_differences(val_dict, baseline_tag=baseline_sex, save_path=path_model, age_range=INIT_AGE_RANGE)
 
+    print('heatmaps created and stored successfully in', path_model)
 
 
 def run_econom_eval(baseline_sex ='male', tuning_type = 'manual', path_tag = '', kfolds = 1):
@@ -209,7 +210,12 @@ def run_econom_eval(baseline_sex ='male', tuning_type = 'manual', path_tag = '',
         quantiles = np.quantile(e_rel, alphas)
         stats = pd.DataFrame(data = None, columns = alphas)
         stats.loc[baseline_sex+r' $q_\alpha$ [%]']=np.round(quantiles*100,2)
-        stats.to_latex(os.path.join(path_model, r'{}{}_error_rel_stats.tex'.format(baseline_sex, cv_train_tag)))
+        
+        stats_path = os.path.join(path_model, r'{}{}_error_rel_stats.tex'.format(baseline_sex, cv_train_tag))
+        stats.to_latex(stats_path)
+        print(f'statistics for baseline sex {baseline_sex} and crossval with kfold {k+1} (out of {kfolds} kfolds). Note: Total kfolds=1 means no crossvalidation.')
+        print(stats)
+        print('stats computed and stored successfully at', stats_path)
 
     
 if __name__ == '__main__':
