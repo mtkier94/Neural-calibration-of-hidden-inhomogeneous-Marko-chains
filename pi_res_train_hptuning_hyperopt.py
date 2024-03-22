@@ -269,5 +269,10 @@ if __name__ == '__main__':
     #--------------------------
 
     for gender in ['female', 'male']:
+
+        if (not training_flag) and (not finetuning_flag):
+            print(f"All training flags are off. No HPTuning will be performed for {gender} gender model.")
+            continue
+
         run_main(baseline_sex= gender, eval_nums= n, bool_train= training_flag, bool_finetune=finetuning_flag)
         
