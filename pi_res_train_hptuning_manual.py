@@ -40,7 +40,7 @@ def ES():
 def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train = False, LR_RATES = [1e-2,5e-3, 1e-3], HP_BZ = [32, 64, 128], epochs=1000):
 
     if not bool_train:
-        print('train-flag is off. No HPTuning will be performed.')
+        print(f'train-flag is off. No HPTuning will be performed for {baseline_sex} gender model.')
         return
 
     print(f'Starting manual HPTuning of model with layer-withs {widths_lst} on a grid of learning rates {LR_RATES} and batch sizes {HP_BZ} for {epochs} epochs. Training with kfold crossvalidation of {kfolds} folds (where 1 folds means no crossvalidation).')
@@ -336,8 +336,6 @@ if __name__ ==  '__main__':
     #----------------------
 
     assert (flag_training != True) or (flag_finetuning != True), 'either train new models or fine-tune existing' # either train new models or fine-tune existing
-    
-    print(flag_training, flag_finetuning, widths)
 
     for gender in ['female', 'male']:
         if not flag_finetuning:
