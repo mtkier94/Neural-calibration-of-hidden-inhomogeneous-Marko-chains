@@ -37,10 +37,13 @@ def ES():
 
 
 
-def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train = False, LR_RATES = [1e-2,5e-3, 1e-3], HP_BZ = [32, 64, 128]):
+def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train = False, LR_RATES = [1e-2,5e-3, 1e-3], HP_BZ = [32, 64, 128], epochs=1000):
 
-    EPOCHS = 1000
-    print(f'Starting manual HPTuning of model with layer-withs {widths_lst} on a grid of learning rates {LR_RATES} and batch sizes {HP_BZ} for {EPOCHS} epochs. Training with kfold crossvalidation of {kfolds} folds (where 1 folds means no crossvalidation).')
+    if not bool_train:
+        print('train-flag is off. No HPTuning will be performed.')
+        return
+
+    print(f'Starting manual HPTuning of model with layer-withs {widths_lst} on a grid of learning rates {LR_RATES} and batch sizes {HP_BZ} for {epochs} epochs. Training with kfold crossvalidation of {kfolds} folds (where 1 folds means no crossvalidation).')
 
     for cv_kfold in range(kfolds):
         kfold_tag = '' if kfolds==1 else f'_cv_{cv_kfold}' # enable cross validation study but keep code backwards compatible for w/o cv, i.e. kfolds=1
@@ -89,12 +92,10 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
             print('--------------')
             raise error
 
-                # select contract-features for res-net
+        # select contract-features for res-net
         # recall format: x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
         res_features = [0,3,6,7]
         base_features = [0,3]
-    
-    
     
         # HP_PARAMS
         l2_penalty = 0.0
@@ -126,54 +127,34 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
                         tag = 'adam'
                     else:
                         tag = 'avg'
-                    
-                    if bool_train:
-                        
-                        print('Running with lr {}, optimizer {}, bz {} and kfolds {} and training for {} epochs.'.format(lrate, tag, hp_batchsize, kfolds, EPOCHS))
-                        # train pmodel
-                        # initiate new res_new and reset weights -> same pseudo-random start for different optimizers
-                        pmodel_res = create_mortality_res_net(hidden_layers=widths_lst, param_l2_penalty=l2_penalty, input_shape=(None, len(res_features)), n_out=2)
-                        pmodel_res.set_weights(w_init)
-                        if baseline_sex != 'none':
-                            pmodel = combine_models(pmodel_base, pmodel_res, bool_masking = True)
-                        else:
-                            pmodel = pmodel_res
-                        pmodel.compile(loss = compute_loss_mae, metrics=None, optimizer = optimizer)
-                        #check if weight-initialization was sucessfull
-                        #print('init model-eval: ', pmodel.evaluate(x=[x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted, batch_size = 1024, verbose= 1))
-    
-                        tic = time.time()
-                        if baseline_sex != 'none':
-                            pmodel.fit(x=[x_train[:,:,base_features], x_train[:,:,res_features]], y = y_train, 
-                                            epochs=EPOCHS, batch_size = hp_batchsize*N_GPUs, callbacks=callbacks, verbose= 1)
-                        else:
-                            pmodel.fit(x=x_train[:,:,res_features], y = y_train, 
-                                            epochs=EPOCHS, batch_size = hp_batchsize*N_GPUs, callbacks=callbacks, verbose= 1)
-                        times_dict['lr_{}_bz_{}'.format(lrate, hp_batchsize)] = np.round((time.time()-tic)/60)
-                        
-    
-                        history = pmodel.history.history['loss']
-                        # include save_format as we use a custom loss (see load_model below for futher syntax)
-                        pmodel.save(os.path.join(path_model, r'model_lr_{}_bz_{}{}.h5'.format(lrate, hp_batchsize, kfold_tag)), save_format = 'tf')
-                        np.save(os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag)), history)
-    
-                    elif os.path.exists(os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag))):
-                        pmodel = load_model(os.path.join(path_model, r'model_lr_{}_bz_{}{}.h5'.format(lrate, hp_batchsize, kfold_tag)), compile=False)
-                        pmodel.compile(loss = compute_loss_mae, metrics=None, optimizer = optimizer)
-                        print(' ... Model ({}) with lr {}, bz {} and kfolds {} loaded.'.format(baseline_sex, lrate, hp_batchsize, kfolds))
-    
-                        with open(os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag)), 'rb') as f:
-                            history = np.load(f, allow_pickle=True)
-    
-                        # did exploding gradients occur during training? check loaded model
-                        bool_nan_val = check_exploded_gradients(pmodel)
-                        if bool_nan_val == True:
-                            print('Model with nan-paramter-values! ', r'model_lr_{}_bz_{}{}.h5'.format(lrate, hp_batchsize, kfold_tag))
+
+                    print('Running with lr {}, optimizer {}, bz {} and kfolds {} and training for {} epochs.'.format(lrate, tag, hp_batchsize, kfolds, epochs))
+                    # train pmodel
+                    # initiate new res_new and reset weights -> same pseudo-random start for different optimizers
+                    pmodel_res = create_mortality_res_net(hidden_layers=widths_lst, param_l2_penalty=l2_penalty, input_shape=(None, len(res_features)), n_out=2)
+                    pmodel_res.set_weights(w_init)
+                    if baseline_sex != 'none':
+                        pmodel = combine_models(pmodel_base, pmodel_res, bool_masking = True)
                     else:
-                        print('train-flag is off and model with lr {}, bz {} and kfolds {} not yet trained.'.format(lrate, hp_batchsize, kfolds))
-                        cache = os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag))
-                        print(f'Expected file path {cache} empty.')
-                        return
+                        pmodel = pmodel_res
+                    pmodel.compile(loss = compute_loss_mae, metrics=None, optimizer = optimizer)
+                    #check if weight-initialization was sucessfull
+                    #print('init model-eval: ', pmodel.evaluate(x=[x_ts_pad[:,:,base_features], x_ts_pad[:,:,res_features]], y = y_ts_pad_discounted, batch_size = 1024, verbose= 1))
+
+                    tic = time.time()
+                    if baseline_sex != 'none':
+                        pmodel.fit(x=[x_train[:,:,base_features], x_train[:,:,res_features]], y = y_train,
+                                        epochs=epochs, batch_size = hp_batchsize*N_GPUs, callbacks=callbacks, verbose= 1)
+                    else:
+                        pmodel.fit(x=x_train[:,:,res_features], y = y_train,
+                                        epochs=epochs, batch_size = hp_batchsize*N_GPUs, callbacks=callbacks, verbose= 1)
+                    times_dict['lr_{}_bz_{}'.format(lrate, hp_batchsize)] = np.round((time.time()-tic)/60)
+
+
+                    history = pmodel.history.history['loss']
+                    # include save_format as we use a custom loss (see load_model below for futher syntax)
+                    pmodel.save(os.path.join(path_model, r'model_lr_{}_bz_{}{}.h5'.format(lrate, hp_batchsize, kfold_tag)), save_format = 'tf')
+                    np.save(os.path.join(path_model, r'model_lr_{}_bz_{}{}_hist.npy'.format(lrate, hp_batchsize, kfold_tag)), history)
                         
                     # plot training history
                     if baseline_sex != 'none':
@@ -210,17 +191,10 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
                     plt.plot(np.arange(len(np.array(history).flatten())), np.array(history).flatten(), label='lr: {}, bz: {}, l/re: {}'.format(lrate, hp_batchsize, metrics_tag))
         
         # save training times
-        if bool_train == True:
-            with open(os.path.join(path_model, 'training_times.p'), 'wb') as fp:
-                pickle.dump(times_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
-        else:
-            with open(os.path.join(path_model, 'training_times.p'), 'rb') as fp:
-                print('ValueError: unsupported pickle protocol: 5')
-                print('We skip loading training times for now!')
-                #times_dict = pickle.load(fp)
+        with open(os.path.join(path_model, 'training_times.p'), 'wb') as fp:
+            pickle.dump(times_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
     
-    
-        # display collective plot for all training-settings loaded in loop
+        # save plot with training behaviour of all HParam settings
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.yscale('log')
@@ -315,12 +289,6 @@ if __name__ ==  '__main__':
         description="Input args for hyperopt HPTuning"
     )
     parser.add_argument(
-        "--layer_widths",
-        type=list,
-        default=[50, 50, 50, 50, 50],
-        help="List with widths of the dense layers in pi_res architecture.",
-    )
-    parser.add_argument(
         "--training_flag",
         type=bool,
         default=False,
@@ -332,12 +300,39 @@ if __name__ ==  '__main__':
         default=False,
         help="If True, finetune the currently best model and save it.",
     )
+    parser.add_argument(
+        "--layer_widths",
+        type=list,
+        default=[50, 50, 50, 50, 50],
+        help="List with widths of the dense layers in pi_res architecture.",
+    )
+    parser.add_argument(
+        "--lr_rates",
+        type=list,
+        default=[1e-2, 5e-3, 1e-3],
+        help="List with learning rates for HPTuning.",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=list,
+        default=[32, 64, 128],
+        help="List with batch sizes (per GPU) for HPTuning.",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=list,
+        default=1000,
+        help="Number of epochs for HPTuning.",
+    )
     args = parser.parse_args()
     #----------------------
     # settings: 
     flag_training = args.training_flag
     flag_finetuning = args.finetuning_flag
     widths = args.layer_widths
+    learning_rates = args.lr_rates
+    batch_size = args.batch_size
+    epochs = args.epochs
     #----------------------
 
     assert (flag_training != True) or (flag_finetuning != True), 'either train new models or fine-tune existing' # either train new models or fine-tune existing
@@ -346,7 +341,9 @@ if __name__ ==  '__main__':
 
     for gender in ['female', 'male']:
         if not flag_finetuning:
-            run_manual_HPS(baseline_sex=gender, bool_train=flag_training, widths_lst = widths)
+            run_manual_HPS(baseline_sex=gender, bool_train=flag_training,
+                           LR_RATES=learning_rates, batch_size= batch_size,
+                           widths_lst = widths, epochs=epochs)
             
         if flag_finetuning:
             # optional: finetuning
