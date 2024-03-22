@@ -91,12 +91,18 @@ def run_main(baseline_sex = 'female', eval_nums = 32, bool_train = False, bool_f
     
 
     #### load data
-    with open(os.path.join(path_data, 'x_train_raw.npy'), 'rb') as f:
-        x_train_raw = np.load(f, allow_pickle=True)
-    with open(os.path.join(path_data, 'x_train.npy'), 'rb') as f:
-        x_train = np.load(f, allow_pickle=True)
-    with open(os.path.join(path_data, 'y_train.npy'), 'rb') as f:
-        y_train = np.load(f, allow_pickle=True)
+    try:
+        with open(os.path.join(path_data, 'x_train_raw.npy'), 'rb') as f:
+            x_train_raw = np.load(f, allow_pickle=True)
+        with open(os.path.join(path_data, 'x_train.npy'), 'rb') as f:
+            x_train = np.load(f, allow_pickle=True)
+        with open(os.path.join(path_data, 'y_train.npy'), 'rb') as f:
+            y_train = np.load(f, allow_pickle=True)
+    except Exception as error:
+        print('--------------')
+        print('Error while loading files. Make sure all files are available, e.g. by running create_data.py.')
+        print('--------------')
+        raise error
 
     N_contracts, N_seq_pad, N_features = x_train.shape
 

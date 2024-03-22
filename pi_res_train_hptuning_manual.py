@@ -65,25 +65,31 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
         N_GPUs = strategy.num_replicas_in_sync
     
         #### load data
-        with open(os.path.join(path_data, f'x_train_raw{kfold_tag}.npy'), 'rb') as f:
-            x_train_raw = np.load(f, allow_pickle=True)
-        with open(os.path.join(path_data, f'x_train{kfold_tag}.npy'), 'rb') as f:
-            x_train = np.load(f, allow_pickle=True)
-        with open(os.path.join(path_data, f'y_train{kfold_tag}.npy'), 'rb') as f:
-            y_train = np.load(f, allow_pickle=True)
-    
-        with open(os.path.join(path_data, f'x_test_raw{kfold_tag}.npy'), 'rb') as f:
-            x_test_raw = np.load(f, allow_pickle=True)
-            print(f'\t .. x_test_raw{kfold_tag} loaded. ', type(x_test_raw), ' of shape ', x_test_raw.shape)
-        with open(os.path.join(path_data, f'x_test{kfold_tag}.npy'), 'rb') as f:
-            x_test = np.load(f, allow_pickle=True)#.astype(np.float64)
-            print(f'\t .. x_test{kfold_tag} loaded.', type(x_test), ' of shape ', x_test.shape)
-        # load cash-flow values (test-data w/o premium-related payments)
-        with open(os.path.join(path_data, rf'y_test{kfold_tag}.npy'), 'rb') as f:
-            y_test = np.load(f, allow_pickle=True)#.astype(np.float64)
-            print(f'\t .. y_test{kfold_tag} loaded.', type(y_test), ' of shape ', y_test.shape)    
-    
-        # select contract-features for res-net
+        try:
+            with open(os.path.join(path_data, f'x_train_raw{kfold_tag}.npy'), 'rb') as f:
+                x_train_raw = np.load(f, allow_pickle=True)
+            with open(os.path.join(path_data, f'x_train{kfold_tag}.npy'), 'rb') as f:
+                x_train = np.load(f, allow_pickle=True)
+            with open(os.path.join(path_data, f'y_train{kfold_tag}.npy'), 'rb') as f:
+                y_train = np.load(f, allow_pickle=True)
+
+            with open(os.path.join(path_data, f'x_test_raw{kfold_tag}.npy'), 'rb') as f:
+                x_test_raw = np.load(f, allow_pickle=True)
+                print(f'\t .. x_test_raw{kfold_tag} loaded. ', type(x_test_raw), ' of shape ', x_test_raw.shape)
+            with open(os.path.join(path_data, f'x_test{kfold_tag}.npy'), 'rb') as f:
+                x_test = np.load(f, allow_pickle=True)#.astype(np.float64)
+                print(f'\t .. x_test{kfold_tag} loaded.', type(x_test), ' of shape ', x_test.shape)
+            # load cash-flow values (test-data w/o premium-related payments)
+            with open(os.path.join(path_data, rf'y_test{kfold_tag}.npy'), 'rb') as f:
+                y_test = np.load(f, allow_pickle=True)#.astype(np.float64)
+                print(f'\t .. y_test{kfold_tag} loaded.', type(y_test), ' of shape ', y_test.shape)
+        except Exception as error:
+            print('--------------')
+            print('Error while loading files. Make sure all files are available, e.g. by running create_data.py.')
+            print('--------------')
+            raise error
+
+                # select contract-features for res-net
         # recall format: x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
         res_features = [0,3,6,7]
         base_features = [0,3]
