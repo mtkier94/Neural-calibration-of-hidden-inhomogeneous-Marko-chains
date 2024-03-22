@@ -342,7 +342,7 @@ if __name__ ==  '__main__':
     for gender in ['female', 'male']:
         if not flag_finetuning:
             run_manual_HPS(baseline_sex=gender, bool_train=flag_training,
-                           LR_RATES=learning_rates, batch_size= batch_size,
+                           LR_RATES=learning_rates, HP_BZ= batch_size,
                            widths_lst = widths, epochs=epochs)
             
         if flag_finetuning:
