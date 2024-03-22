@@ -88,9 +88,9 @@ def run_manual_HPS(baseline_sex, widths_lst = [40, 40, 20], kfolds=1, bool_train
                 print(f'\t .. y_test{kfold_tag} loaded.', type(y_test), ' of shape ', y_test.shape)
         except Exception as error:
             print('--------------')
-            print('Error while loading files. Make sure all files are available, e.g. by running create_data.py.')
+            print(f'Error {error} while loading files. \n Make sure all files are available, e.g. by running create_data.py.')
             print('--------------')
-            raise error
+            return
 
         # select contract-features for res-net
         # recall format: x[['x', 'n', 't', 'ZahlweiseNum','Beginnjahr', 'Beginnmonat',  'GeschlechtNum', 'RauchertypNum', 'Leistung', 'tba']]
