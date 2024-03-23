@@ -136,27 +136,34 @@ def run_econom_eval(baseline_sex ='male', tuning_type = 'manual', path_tag = '',
     
     
         #### load test data, i.e. with premium values set to zero and cash-flows w/o premium-related payments
-        with open(os.path.join(path_data, f'x_test_raw{cv_validation_tag}.npy'), 'rb') as f:
-            x_test_raw = np.load(f, allow_pickle=True)
-            # print('\t .. x_test_raw loaded. ', type(x_test_raw), ' of shape ', x_test_raw.shape)
-        with open(os.path.join(path_data, f'x_test{cv_validation_tag}.npy'), 'rb') as f:
-            x_test = np.load(f, allow_pickle=True)#.astype(np.float64)
-            # print('\t .. x_test loaded.', type(x_test), ' of shape ', x_test.shape)
-        # load cash-flow values (test-data w/o premium-related payments)
-        with open(os.path.join(path_data, f'y_test{cv_validation_tag}.npy'), 'rb') as f:
-            y_test = np.load(f, allow_pickle=True)#.astype(np.float64)
-            # print('\t .. y_test loaded.', type(y_test), ' of shape ', y_test.shape)
-    
-        # # backtesting: check consistency of training and test data
-        # with open(os.path.join(path_data, f'x_train{cv_validation_tag}.npy'), 'rb') as f:
-        #     x_train = np.load(f, allow_pickle=True)
-        #     # print('\t .. x_train loaded for backtesting.')
+        try:
+            with open(os.path.join(path_data, f'x_test_raw{cv_validation_tag}.npy'), 'rb') as f:
+                x_test_raw = np.load(f, allow_pickle=True)
+                # print('\t .. x_test_raw loaded. ', type(x_test_raw), ' of shape ', x_test_raw.shape)
+            with open(os.path.join(path_data, f'x_test{cv_validation_tag}.npy'), 'rb') as f:
+                x_test = np.load(f, allow_pickle=True)#.astype(np.float64)
+                # print('\t .. x_test loaded.', type(x_test), ' of shape ', x_test.shape)
+            # load cash-flow values (test-data w/o premium-related payments)
+            with open(os.path.join(path_data, f'y_test{cv_validation_tag}.npy'), 'rb') as f:
+                y_test = np.load(f, allow_pickle=True)#.astype(np.float64)
+                # print('\t .. y_test loaded.', type(y_test), ' of shape ', y_test.shape)
 
-        # load x_values from holdout set
-        with open(os.path.join(path_data, f'x_train_raw{cv_validation_tag}.npy'), 'rb') as f:
-            contract_features_raw = np.load(f, allow_pickle=True)
-            # print('\t .. contract_features_raw loaded. Premium-values will be used for economic evaluation.')
-    
+            # # backtesting: check consistency of training and test data
+            # with open(os.path.join(path_data, f'x_train{cv_validation_tag}.npy'), 'rb') as f:
+            #     x_train = np.load(f, allow_pickle=True)
+            #     # print('\t .. x_train loaded for backtesting.')
+
+            # load x_values from holdout set
+            with open(os.path.join(path_data, f'x_train_raw{cv_validation_tag}.npy'), 'rb') as f:
+                contract_features_raw = np.load(f, allow_pickle=True)
+                # print('\t .. contract_features_raw loaded. Premium-values will be used for economic evaluation.')
+        except Exception as error:
+            print('--------------')
+            print(
+                f'Error {error} while loading files. \n Make sure all files are available, e.g. by running create_data.py.')
+            print('--------------')
+            return
+
         # sanity check for loaded data
         # check_test_data(data_train=x_train, data_test=x_test)
     
