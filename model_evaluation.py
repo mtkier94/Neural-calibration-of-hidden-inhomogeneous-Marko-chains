@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import pandas as pd
 import os, sys
@@ -217,37 +218,42 @@ def run_econom_eval(baseline_sex ='male', tuning_type = 'manual', path_tag = '',
         print(stats)
         print('stats computed and stored successfully at', stats_path)
 
-    
+
 if __name__ == '__main__':
 
     # ---------------------
     # load results of manual ('manual') or automated ('auto') HPTuning
     # optional: load load as a user input when running the current file
-    try:
-        mode = sys.argv[1]
-        if mode not in ['manual', 'auto']:
-            raise ValueError('User input not compatible.')
-        print('HPTuning mode: ', mode)
-    except:
-        mode = 'manual'
-        print('Using manual HPTuning by default ..')
-    # ---------------------
+
+    parser = argparse.ArgumentParser(
+        description="Input args for hyperopt HPTuning"
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default='manual',
+        help="Indicate if results from manual ('manual') or automated ('auto') HPTuning should be loaded.",
+    )
+
+    args = parser.parse_args()
+    mode = args.mode
+
+    import warnings
+    import logging
+
+    warnings.filterwarnings("ignore")
+    logging.getLogger('matplotlib').setLevel(
+        level=logging.CRITICAL)  # supress postscript latency warnings when saving images in an .eps-format
 
     for gender in ['female', 'male']:
         print('####################################################')
-        # optional: loop over old layer-settings of manual HPSearch
-        # Note: for the automated hp-search the empty tag '' is required
-        for tag in ['_50_50_50_50_50']: #'_40_40_20', '_50_50_50', '_50_50_50_50', '_50_50_50_50_50', '_50_50_50_50_50_50', '_18_11_2021_best']:
-        
-            import warnings
-            warnings.filterwarnings("ignore")
-            import logging
-            logging.getLogger('matplotlib').setLevel(level=logging.CRITICAL) # supress postscript latency warnings when saving images in an .eps-format
-        
-
+        # optional: uncomment to loop over more layer-settings of manual HPSearch
+        for tag in [
+            '_50_50_50_50_50'  # '_40_40_20', '_50_50_50', '_50_50_50_50', '_50_50_50_50_50', '_50_50_50_50_50_50'
+        ]:
             # create all qualitative plots
-            run_visual_eval(baseline_sex = gender, tuning_type= mode, path_tag=tag)
+            run_visual_eval(baseline_sex=gender, tuning_type=mode, path_tag=tag)
 
             print('\t layer widths: ' + tag)
             # perform economic backtesting
-            run_econom_eval(baseline_sex= gender, tuning_type= mode, path_tag=tag)
+            run_econom_eval(baseline_sex=gender, tuning_type=mode, path_tag=tag)
